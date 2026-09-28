@@ -1,0 +1,1 @@
+{ "mcpServers": { "old-postgres": { "command": "old-postgres-mcp-not-installed" } } }
