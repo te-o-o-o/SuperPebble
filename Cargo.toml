@@ -1,3 +1,3 @@
 [workspace]
-members = ["crates/superpebble"]
+members = ["crates/superpebble", "src-tauri"]
 resolver = "2"
