@@ -15,6 +15,8 @@ pub struct Settings {
 fn managed_path() -> PathBuf {
     if cfg!(target_os = "macos") {
         PathBuf::from("/Library/Application Support/ClaudeCode/managed-settings.json")
+    } else if cfg!(windows) {
+        PathBuf::from(r"C:\ProgramData\ClaudeCode\managed-settings.json")
     } else {
         PathBuf::from("/etc/claude-code/managed-settings.json")
     }

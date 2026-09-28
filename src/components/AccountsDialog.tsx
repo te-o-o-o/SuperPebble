@@ -4,6 +4,7 @@ import type { Account } from "../types";
 import { home } from "./home";
 
 const SHAREABLE = ["skills", "agents", "commands", "CLAUDE.md"];
+const shellAliases = !navigator.userAgent.includes("Windows");
 
 type Props = { open: boolean; accounts: Account[]; onClose: () => void; onChange: (a: Account[]) => void };
 
@@ -83,7 +84,7 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
               </button>
             ))}
           </div>
-          <div className="row">
+          {shellAliases && <div className="row">
             <span className="muted small label">Alias</span>
             <code>claude-{a.name}</code>
             {a.alias.kind === "manual" ? (
@@ -94,7 +95,7 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
                 dans ~/.zshrc
               </label>
             )}
-          </div>
+          </div>}
         </>
       )}
     </section>
@@ -104,7 +105,7 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
 function NewAccount({ run }: { run: (p: Promise<Account[]>, success?: string) => Promise<void> }) {
   const [name, setName] = useState("");
   const [share, setShare] = useState(new Set(SHAREABLE));
-  const [alias, setAlias] = useState(true);
+  const [alias, setAlias] = useState(shellAliases);
   const valid = /^[a-z0-9_-]+$/.test(name) && name !== "default";
 
   const create = () =>
@@ -138,10 +139,12 @@ function NewAccount({ run }: { run: (p: Promise<Account[]>, success?: string) =>
           </button>
         ))}
       </div>
-      <label className="switch">
-        <input type="checkbox" checked={alias} onChange={(e) => setAlias(e.target.checked)} />
-        Ajouter l'alias <code>claude-{name || "…"}</code> dans ~/.zshrc
-      </label>
+      {shellAliases && (
+        <label className="switch">
+          <input type="checkbox" checked={alias} onChange={(e) => setAlias(e.target.checked)} />
+          Ajouter l'alias <code>claude-{name || "…"}</code> dans ~/.zshrc
+        </label>
+      )}
       <button className="primary" disabled={!valid} onClick={create}>
         Créer le compte
       </button>

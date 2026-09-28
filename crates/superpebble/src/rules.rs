@@ -87,11 +87,18 @@ pub fn set_search_path(path: String) {
 
 /// Is `cmd` an existing path, or a file somewhere in the search path?
 fn found(cmd: &str) -> bool {
-    if cmd.contains('/') {
+    if cmd.contains('/') || cmd.contains('\\') {
         return Path::new(cmd).exists();
     }
     let path = SEARCH_PATH.get().map(Into::into).or_else(|| std::env::var_os("PATH"));
-    path.is_some_and(|p| std::env::split_paths(&p).any(|d: PathBuf| d.join(cmd).is_file()))
+    // Windows resolves `npx` to `npx.cmd` etc. through PATHEXT.
+    let exts: Vec<String> = if cfg!(windows) {
+        let pathext = std::env::var("PATHEXT").unwrap_or_else(|_| ".EXE;.CMD;.BAT;.COM".into());
+        std::iter::once(String::new()).chain(pathext.split(';').map(str::to_lowercase)).collect()
+    } else {
+        vec![String::new()]
+    };
+    path.is_some_and(|p| std::env::split_paths(&p).any(|d: PathBuf| exts.iter().any(|e| d.join(format!("{cmd}{e}")).is_file())))
 }
 
 /// Minimal shell split (quotes only, no escapes/globs), enough to find script paths.

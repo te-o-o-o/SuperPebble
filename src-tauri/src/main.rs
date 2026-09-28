@@ -84,6 +84,9 @@ fn open_path(state: State<AppState>, path: PathBuf) -> Result<(), String> {
     if !state.known.lock().unwrap().contains(&path) {
         return Err("chemin inconnu du dernier scan".into());
     }
+    #[cfg(windows)]
+    return open_windows(&path);
+    #[cfg(not(windows))]
     Command::new("code")
         .arg(&path)
         .spawn()
@@ -98,10 +101,26 @@ fn open_path(state: State<AppState>, path: PathBuf) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// `code` is `code.cmd` on Windows, which Command can't spawn directly: go through cmd,
+/// hidden, and fall back to Explorer's default app.
+#[cfg(windows)]
+fn open_windows(path: &std::path::Path) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let code = Command::new("cmd").args(["/C", "code"]).arg(path).creation_flags(CREATE_NO_WINDOW).status();
+    if code.is_ok_and(|s| s.success()) {
+        return Ok(());
+    }
+    Command::new("explorer").arg(path).spawn().map(drop).map_err(|e| e.to_string())
+}
+
 /// Apps launched from Finder/a desktop menu get a minimal PATH, which would flag every
 /// `npx`/`uvx` MCP as orphan. Asking the login shell takes seconds with a heavy zshrc,
 /// so it runs off the startup path and triggers a rescan once known.
 fn login_shell_path() -> Option<String> {
+    if cfg!(windows) {
+        return None; // GUI apps get the full user PATH on Windows
+    }
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
     let out = Command::new(shell).args(["-ilc", "printf '\\n__SP__%s' \"$PATH\""]).stdin(std::process::Stdio::null()).output().ok()?;
     let text = String::from_utf8_lossy(&out.stdout);

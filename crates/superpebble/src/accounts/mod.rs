@@ -108,6 +108,9 @@ pub fn create(name: &str, share: &[String], alias: bool) -> Result<(), String> {
     if dir.exists() {
         return Err(format!("{} existe déjà.", dir.display()));
     }
+    if alias && cfg!(windows) {
+        return Err("Les alias shell (~/.zshrc) ne sont pas disponibles sous Windows.".into());
+    }
     if let Some(line) = manual_alias(name).filter(|_| alias) {
         return Err(format!("claude-{name} est déjà défini à la main dans ~/.zshrc (ligne {line})."));
     }
@@ -143,7 +146,22 @@ pub fn set_shared(config_dir: &Path, item: &str, on: bool) -> Result<(), String>
         let made = if item == "CLAUDE.md" { std::fs::write(&src, "") } else { std::fs::create_dir_all(&src) };
         made.map_err(|e| e.to_string())?;
     }
-    std::os::unix::fs::symlink(&src, &link).map_err(|e| e.to_string())
+    symlink(&src, &link).map_err(|e| e.to_string())
+}
+
+#[cfg(unix)]
+fn symlink(src: &Path, link: &Path) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(src, link)
+}
+
+/// Needs Developer Mode (or admin) on Windows, like any symlink there.
+#[cfg(windows)]
+fn symlink(src: &Path, link: &Path) -> std::io::Result<()> {
+    if src.is_dir() {
+        std::os::windows::fs::symlink_dir(src, link)
+    } else {
+        std::os::windows::fs::symlink_file(src, link)
+    }
 }
 
 fn manual_alias(name: &str) -> Option<usize> {
@@ -154,6 +172,9 @@ fn manual_alias(name: &str) -> Option<usize> {
 pub fn set_alias(config_dir: &Path, on: bool) -> Result<(), String> {
     if !is_named_account(config_dir) {
         return Err("Alias impossible pour ce compte.".into());
+    }
+    if cfg!(windows) {
+        return Err("Les alias shell (~/.zshrc) ne sont pas disponibles sous Windows.".into());
     }
     let name = config_dir.file_name().unwrap_or_default().to_string_lossy().trim_start_matches(".claude-").to_string();
     let path = zshrc_path();
