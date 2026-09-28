@@ -1,0 +1,98 @@
+//! The only part of `~/.zshrc` we own is the block between the markers. Aliases written by
+//! hand elsewhere are detected and left alone.
+
+use std::collections::BTreeMap;
+
+const START: &str = "# >>> superpebble accounts >>>";
+const END: &str = "# <<< superpebble accounts <<<";
+
+#[derive(Default, Debug, PartialEq)]
+pub struct Aliases {
+    /// name → config dir, from our block.
+    pub managed: BTreeMap<String, String>,
+    /// name → 1-based line, defined by hand outside the block.
+    pub manual: BTreeMap<String, usize>,
+}
+
+/// `claude-perso() {…}` or `alias claude-perso=…` → `perso`.
+fn alias_name(line: &str) -> Option<&str> {
+    let l = line.trim_start();
+    let l = l.strip_prefix("alias ").unwrap_or(l).strip_prefix("claude-")?;
+    let end = l.find(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')).unwrap_or(l.len());
+    let rest = l[end..].trim_start();
+    (end > 0 && (rest.starts_with('=') || rest.starts_with("()"))).then(|| &l[..end])
+}
+
+pub fn parse(text: &str) -> Aliases {
+    let mut out = Aliases::default();
+    let mut inside = false;
+    for (i, line) in text.lines().enumerate() {
+        match line.trim() {
+            START => inside = true,
+            END => inside = false,
+            _ => {
+                let Some(name) = alias_name(line) else { continue };
+                if inside {
+                    let dir = line.split("CLAUDE_CONFIG_DIR=\"").nth(1).and_then(|r| r.split('"').next()).unwrap_or("");
+                    out.managed.insert(name.to_string(), dir.to_string());
+                } else {
+                    out.manual.entry(name.to_string()).or_insert(i + 1);
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Replaces our block with `managed` (removing it when empty); the rest of the file is untouched.
+pub fn render(text: &str, managed: &BTreeMap<String, String>) -> String {
+    let mut kept: Vec<&str> = vec![];
+    let mut inside = false;
+    for line in text.lines() {
+        match line.trim() {
+            START => inside = true,
+            END => inside = false,
+            _ if !inside => kept.push(line),
+            _ => {}
+        }
+    }
+    while kept.last().is_some_and(|l| l.trim().is_empty()) {
+        kept.pop();
+    }
+    let mut out = kept.join("\n");
+    if !managed.is_empty() {
+        out += &format!("\n\n{START}\n# Généré par SuperPebble, modifié depuis l'app.\n");
+        for (name, dir) in managed {
+            out += &format!("claude-{name}() {{ CLAUDE_CONFIG_DIR=\"{dir}\" claude \"$@\"; }}\n");
+        }
+        out += END;
+    }
+    out + "\n"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const RC: &str = "export X=1\nclaude-work() { CLAUDE_CONFIG_DIR=~/.claude-work claude \"$@\"; }\n";
+
+    #[test]
+    fn detects_manual_and_roundtrips_block() {
+        let managed = BTreeMap::from([("perso".to_string(), "$HOME/.claude-perso".to_string())]);
+        let with_block = render(RC, &managed);
+        let a = parse(&with_block);
+        assert_eq!(a.manual, BTreeMap::from([("work".to_string(), 2)]));
+        assert_eq!(a.managed, managed);
+
+        // Rendering again is stable, and an empty map removes the block entirely.
+        assert_eq!(render(&with_block, &managed), with_block);
+        assert_eq!(render(&with_block, &BTreeMap::new()), RC);
+    }
+
+    #[test]
+    fn alias_forms() {
+        assert_eq!(alias_name("alias claude-x='CLAUDE_CONFIG_DIR=a claude'"), Some("x"));
+        assert_eq!(alias_name("  claude-a_b () { :; }"), Some("a_b"));
+        assert_eq!(alias_name("claude-code --version"), None);
+    }
+}
