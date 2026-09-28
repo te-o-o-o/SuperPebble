@@ -1,0 +1,12 @@
+[package]
+name = "superpebble-app"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+superpebble = { path = "../crates/superpebble" }
+tauri = { version = "2", features = [] }
+notify = "8"
