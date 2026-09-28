@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
+import rough from "roughjs";
 import { COLORS, relTime } from "../theme";
 import type { Account } from "../types";
 import { home } from "./home";
 import { WindowControls, macTitleBar } from "./WindowControls";
+
+/** Same two pencil passes as app-icon.svg, drawn at icon scale and shrunk, with thicker strokes to stay legible. */
+const gen = rough.generator();
+const one = { disableMultiStroke: true, stroke: COLORS.center, fill: undefined };
+const LOGO = [
+  gen.ellipse(64, 66, 88.5, 67.5, { ...one, strokeWidth: 9, roughness: 1.9, bowing: 2.2, seed: 24 }),
+  gen.ellipse(65.8, 64.8, 91.5, 65.5, { ...one, strokeWidth: 7.5, roughness: 2.2, bowing: 2.6, seed: 91 }),
+].flatMap((d) => gen.toPaths(d));
 
 export function TopBar(props: {
   accounts: Account[];
@@ -24,8 +33,8 @@ export function TopBar(props: {
   return (
     <header className={`topbar${macTitleBar ? " mac" : ""}`} data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
-        <svg width="20" height="16" viewBox="0 0 24 20">
-          <ellipse cx="12" cy="10" rx="10.5" ry="8" fill="none" stroke={COLORS.center} strokeWidth="2.2" />
+        <svg width="20" height="16" viewBox="14 26 102 80">
+          {LOGO.map((p, i) => <path key={i} d={p.d} stroke={p.stroke} strokeWidth={p.strokeWidth} fill="none" strokeLinecap="round" />)}
         </svg>
         SuperPebble
       </div>
