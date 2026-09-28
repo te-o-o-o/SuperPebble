@@ -38,7 +38,7 @@ pub fn write_atomic(path: &Path, content: &str) -> std::io::Result<()> {
     std::fs::rename(&tmp, &target)
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::write_atomic;
 

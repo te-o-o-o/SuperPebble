@@ -58,8 +58,9 @@ impl ScanContext {
     }
 }
 
+/// `$HOME`, or `%USERPROFILE%` on Windows (where Claude Code keeps `.claude` too).
 pub fn home() -> PathBuf {
-    std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default()
+    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_default()
 }
 
 /// Collects nodes and scan-time issues (unreadable files, invalid skills).
