@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 use superpebble::{scan, ScanContext};
 
-const USAGE: &str = "usage: superpebble <scan|doctor> [--config DIR] [--project DIR | --no-project]
+const USAGE: &str = "usage: superpebble <scan|doctor|accounts> [--config DIR] [--project DIR | --no-project]
 
   scan     print the effective config graph as JSON
   doctor   list problems, exit 1 if any error
+  accounts list accounts (config dirs), their sharing and shell alias
 
   --config   account config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
   --project  project dir (default: current dir)";
@@ -22,6 +23,7 @@ fn main() {
     };
 
     match args.first().map(String::as_str) {
+        Some("accounts") => println!("{}", serde_json::to_string_pretty(&superpebble::accounts::list()).unwrap()),
         Some("scan") => println!("{}", serde_json::to_string_pretty(&scan(&ctx)).unwrap()),
         Some("doctor") => {
             let g = scan(&ctx);
