@@ -1,4 +1,7 @@
 //! Runs in its own process: points $HOME at a temp dir so nothing real is touched.
+//! Unix only: shell aliases are not offered on Windows.
+#![cfg(unix)]
+
 use std::fs;
 use superpebble::accounts::{create, list, set_alias, set_shared, Alias};
 

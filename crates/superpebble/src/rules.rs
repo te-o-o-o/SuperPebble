@@ -171,7 +171,8 @@ mod tests {
     fn rules() {
         let nodes = [
             node(Kind::Mcp, "gone", Scope::User, json!({"command": "definitely-not-a-binary-xyz"})),
-            node(Kind::Mcp, "ok", Scope::User, json!({"command": "sh"})),
+            // The test binary itself: a command that exists on every OS.
+            node(Kind::Mcp, "ok", Scope::User, json!({"command": std::env::current_exe().unwrap()})),
             node(Kind::Hook, "Stop", Scope::User, json!({"command": "sh /nope/notify.sh"})),
             node(Kind::Skill, "dup", Scope::User, json!({})),
             node(Kind::Skill, "dup", Scope::Project, json!({})),
