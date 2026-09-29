@@ -123,6 +123,19 @@ npx tauri build --target x86_64-pc-windows-gnu --no-bundle
 Livrez `superpebble-app.exe` avec `WebView2Loader.dll`, depuis
 `target/x86_64-pc-windows-gnu/release/`.
 
+## Release
+
+Montez la version dans `package.json`, `src-tauri/tauri.conf.json`,
+`src-tauri/Cargo.toml` et `crates/superpebble/Cargo.toml`, puis taguez :
+
+```sh
+git tag v0.1.0 && git push --tags
+```
+
+Le workflow `release` construit l'installeur Windows et le zip portable,
+l'image disque macOS universelle, l'AppImage et le `.deb` Linux, puis les
+publie dans une GitHub Release. Les binaires ne sont pas signés.
+
 ## Licence
 
 MIT, voir [LICENSE](LICENSE).
