@@ -75,6 +75,8 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
       </div>
       {a.is_default ? (
         <p className="muted small">{t("Source account: the others share its items.")}</p>
+      ) : a.wsl ? (
+        <p className="muted small">{t("WSL account: read-only for now.")}</p>
       ) : (
         <>
           <div className="row">

@@ -13,7 +13,7 @@ export const api = {
   accounts: (): Promise<Account[]> =>
     inTauri
       ? invoke("accounts")
-      : Promise.resolve([{ name: "demo", config_dir: "~/.claude", is_default: true, email: null, shared: [], alias: { kind: "none" } }]),
+      : Promise.resolve([{ name: "demo", config_dir: "~/.claude", is_default: true, email: null, shared: [], alias: { kind: "none" }, wsl: false }]),
   createAccount: (name: string, share: string[], alias: boolean): Promise<Account[]> => tauriOnly("create_account", { name, share, alias }),
   setShared: (configDir: string, item: string, on: boolean): Promise<Account[]> => tauriOnly("set_shared", { configDir, item, on }),
   setAlias: (configDir: string, on: boolean): Promise<Account[]> => tauriOnly("set_alias", { configDir, on }),

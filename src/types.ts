@@ -39,4 +39,6 @@ export interface Account {
   email: string | null;
   shared: { item: string; link: string | null; own: boolean }[];
   alias: { kind: "none" } | { kind: "managed" } | { kind: "manual"; line: number };
+  /** Lives in a WSL distro: read-only for now. */
+  wsl: boolean;
 }

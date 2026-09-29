@@ -5,7 +5,7 @@
 mod zshrc;
 
 use crate::scan::{home, ScanContext};
-use crate::snapshot;
+use crate::{snapshot, wsl};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
@@ -21,6 +21,8 @@ pub struct Account {
     pub email: Option<String>,
     pub shared: Vec<Shared>,
     pub alias: Alias,
+    /// Lives in a WSL distro, seen from Windows: read-only for now.
+    pub wsl: bool,
 }
 
 #[derive(Serialize)]
@@ -61,16 +63,21 @@ pub fn list() -> Vec<Account> {
         dirs.push(current);
     }
     dirs.sort();
+    dirs.extend(wsl::config_dirs());
 
     let aliases = zshrc::parse(&std::fs::read_to_string(zshrc_path()).unwrap_or_default());
     dirs.into_iter()
         .map(|d| {
             let is_default = d == default_dir();
             let n = d.file_name().unwrap_or_default().to_string_lossy();
-            let name = if is_default {
-                "default".to_string()
+            let short = if n == ".claude" {
+                "default"
             } else {
-                n.strip_prefix(".claude-").unwrap_or(&n).to_string()
+                n.strip_prefix(".claude-").unwrap_or(&n)
+            };
+            let name = match wsl::distro(&d) {
+                Some(distro) => format!("{distro} · {short}"),
+                None => short.to_string(),
             };
             let alias = match (aliases.manual.get(&name), aliases.managed.contains_key(&name)) {
                 (Some(&line), _) => Alias::Manual { line },
@@ -89,6 +96,7 @@ pub fn list() -> Vec<Account> {
                 })
                 .collect();
             Account {
+                wsl: wsl::root(&d).is_some(),
                 email: email(&d),
                 shared,
                 alias,
@@ -240,7 +248,7 @@ pub fn projects(config_dir: PathBuf) -> Vec<PathBuf> {
         .as_object()
         .into_iter()
         .flatten()
-        .map(|(k, _)| PathBuf::from(k))
+        .map(|(k, _)| ctx.path(k))
         .filter(|p| p.is_dir())
         .collect();
     out.sort();

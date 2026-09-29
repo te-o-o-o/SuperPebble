@@ -11,7 +11,7 @@ pub fn scan(s: &mut Scan, st: &Settings) {
     servers(s, cj.get("mcpServers"), Scope::User, &cj_path, None);
 
     let Some(project) = s.ctx.project.clone() else { return };
-    let local = &cj["projects"][project.to_string_lossy().as_ref()];
+    let local = &cj["projects"][s.ctx.key(&project).as_str()];
     let disabled: HashSet<&str> = local["disabledMcpServers"]
         .as_array()
         .into_iter()

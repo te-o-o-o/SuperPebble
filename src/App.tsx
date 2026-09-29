@@ -34,7 +34,7 @@ export default function App() {
   useEffect(() => {
     api.accounts().then((a) => {
       setAccounts(a);
-      setAccount(a.find((x) => x.name === "default")?.config_dir ?? a[0]?.config_dir ?? "");
+      setAccount(a.find((x) => x.is_default)?.config_dir ?? a[0]?.config_dir ?? "");
     });
   }, []);
 
