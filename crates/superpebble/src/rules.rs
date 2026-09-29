@@ -35,11 +35,13 @@ pub fn check(nodes: &[Node], ctx: &ScanContext) -> Vec<Issue> {
 }
 
 /// Same kind + name loaded from several scopes. Plugin items are namespaced, so they never clash.
+/// A command and a skill of the same name both claim `/name`, so they count as one kind.
 fn duplicates(nodes: &[Node]) -> Vec<Issue> {
     let mut groups: BTreeMap<(String, &str), Vec<&Node>> = BTreeMap::new();
     for n in nodes.iter().filter(|n| n.enabled && n.parent.is_none()) {
-        if matches!(n.kind, Kind::Skill | Kind::Agent | Kind::Command | Kind::Mcp) {
-            groups.entry((format!("{:?}", n.kind), &n.name)).or_default().push(n);
+        let kind = if n.kind == Kind::Command { Kind::Skill } else { n.kind };
+        if matches!(kind, Kind::Skill | Kind::Agent | Kind::Mcp) {
+            groups.entry((format!("{kind:?}"), &n.name)).or_default().push(n);
         }
     }
     groups
@@ -163,12 +165,14 @@ mod tests {
             node(Kind::Hook, "Stop", Scope::User, json!({"command": "sh /nope/notify.sh"})),
             node(Kind::Skill, "dup", Scope::User, json!({})),
             node(Kind::Skill, "dup", Scope::Project, json!({})),
+            node(Kind::Command, "deploy", Scope::User, json!({})),
+            node(Kind::Skill, "deploy", Scope::Project, json!({})),
         ];
         let ctx = ScanContext {
             config_dir: "/x".into(),
             project: None,
         };
         let rules: Vec<_> = check(&nodes, &ctx).iter().map(|i| i.rule).collect();
-        assert_eq!(rules, ["orphan-mcp", "broken-hook", "duplicate"]);
+        assert_eq!(rules, ["orphan-mcp", "broken-hook", "duplicate", "duplicate"]);
     }
 }

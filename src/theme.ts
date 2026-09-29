@@ -6,10 +6,10 @@ export type GroupKey = "plugin" | "skill" | "mcp" | "hook" | "agent" | "config";
 /** Branches around Claude Code. `angle` in degrees, 0 = right, clockwise. */
 export const GROUPS: { key: GroupKey; label: string; sidebar: string; kinds: Kind[]; color: string; angle: number }[] = [
   { key: "plugin", label: "Plugins", sidebar: "Plugins", kinds: ["plugin"], color: "#d9774b", angle: -90 },
-  { key: "skill", label: "Skills", sidebar: "Skills", kinds: ["skill"], color: "#7aa7e0", angle: -22 },
+  { key: "skill", label: "Skills", sidebar: t("Skills & commands"), kinds: ["skill", "command"], color: "#7aa7e0", angle: -22 },
   { key: "mcp", label: "MCP", sidebar: t("MCP servers"), kinds: ["mcp"], color: "#5fbfb0", angle: 38 },
   { key: "hook", label: "Hooks", sidebar: "Hooks", kinds: ["hook"], color: "#9cc27a", angle: 90 },
-  { key: "agent", label: "Agents", sidebar: t("Agents & commands"), kinds: ["agent", "command"], color: "#d8c07a", angle: 148 },
+  { key: "agent", label: "Agents", sidebar: "Agents", kinds: ["agent"], color: "#d8c07a", angle: 148 },
   { key: "config", label: t("Config"), sidebar: t("Config files"), kinds: ["config"], color: "#b9a3e8", angle: 208 },
 ];
 
@@ -69,7 +69,6 @@ export function hint(n: PNode, childCount: number) {
   switch (n.kind) {
     case "plugin":
       return `${childCount}`;
-    case "agent":
     case "command":
       return n.kind;
     case "hook": {
