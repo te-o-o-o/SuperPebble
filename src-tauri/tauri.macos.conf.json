@@ -1,7 +1,21 @@
 {
   "app": {
     "windows": [
-      { "title": "SuperPebble", "width": 1440, "height": 900, "minWidth": 1100, "minHeight": 700, "titleBarStyle": "Overlay", "hiddenTitle": true }
+      {
+        "title": "SuperPebble",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ]
+  },
+  "bundle": {
+    "targets": [
+      "app",
+      "dmg"
     ]
   }
 }

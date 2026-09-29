@@ -1,0 +1,148 @@
+# Builds the installers on the three systems and publishes them on a GitHub Release.
+#
+# Triggered by a tag: `git tag v0.1.0 && git push --tags`. The tag must match the version
+# in package.json, tauri.conf.json and both Cargo.toml files: the installers are named
+# after tauri.conf.json, and a mismatch would ship two version numbers.
+#
+# Nothing is signed. Windows shows a SmartScreen warning and macOS refuses to open the
+# app until the user clears it by hand; the release notes say how.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: version
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: check
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for f in package.json src-tauri/tauri.conf.json; do
+            v=$(jq -r .version "$f")
+            [ "$v" = "$tag" ] || { echo "tag $GITHUB_REF_NAME does not match $f version $v" >&2; exit 1; }
+          done
+          for f in src-tauri/Cargo.toml crates/superpebble/Cargo.toml; do
+            v=$(grep -m1 '^version' "$f" | cut -d'"' -f2)
+            [ "$v" = "$tag" ] || { echo "tag $GITHUB_REF_NAME does not match $f version $v" >&2; exit 1; }
+          done
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.name }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+          # One app for both architectures: Apple Silicon and the Intel Macs still around.
+          - name: macos
+            os: macos-14
+            args: --target universal-apple-darwin
+          # Not `ubuntu-latest`: the AppImage links against the glibc that built it,
+          # so the oldest runner buys the widest compatibility.
+          - name: linux
+            os: ubuntu-22.04
+    env:
+      # Runners have no FUSE: linuxdeploy (itself an AppImage) must unpack instead of mounting.
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: System dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Toolchain
+        shell: bash
+        run: |
+          rustup update --no-self-update stable
+          rustup default stable
+          if [ "$RUNNER_OS" = macOS ]; then rustup target add x86_64-apple-darwin aarch64-apple-darwin; fi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build
+        shell: bash
+        run: |
+          npm ci
+          npx tauri build ${{ matrix.args }}
+
+      # Stable file names, independent of Tauri's naming scheme.
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p dist
+          case "$RUNNER_OS" in
+            Windows)
+              cp target/release/bundle/nsis/*-setup.exe dist/superpebble-windows-x86_64-setup.exe
+              # The portable form: the executable alone (WebView2 ships with Windows 10/11).
+              cp target/release/superpebble-app.exe SuperPebble.exe
+              7z a dist/superpebble-windows-x86_64-portable.zip SuperPebble.exe ;;
+            macOS)
+              cp target/universal-apple-darwin/release/bundle/dmg/*.dmg dist/superpebble-macos-universal.dmg ;;
+            Linux)
+              cp target/release/bundle/appimage/*.AppImage dist/superpebble-linux-x86_64.AppImage
+              cp target/release/bundle/deb/*.deb dist/superpebble-linux-x86_64.deb ;;
+          esac
+          ls -l dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: publish
+    needs: [version, build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l dist
+          cat > notes.md <<'EOF'
+          ## Install
+
+          | System | File |
+          |---|---|
+          | Windows | `superpebble-windows-x86_64-setup.exe` (installer) or `…-portable.zip` |
+          | macOS | `superpebble-macos-universal.dmg` (Apple Silicon and Intel) |
+          | Linux | `superpebble-linux-x86_64.AppImage` (`chmod +x`, then run) or the `.deb` |
+
+          **The binaries are not signed.** Windows shows a SmartScreen screen: "More info" →
+          "Run anyway". macOS refuses to open the app: right-click the app → "Open", or
+          `xattr -d com.apple.quarantine /Applications/SuperPebble.app`.
+          EOF
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "SuperPebble $GITHUB_REF_NAME" \
+            --notes-file notes.md
