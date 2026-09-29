@@ -90,13 +90,9 @@ impl Scan<'_> {
         self.nodes.last_mut().unwrap()
     }
 
-    pub fn issue(&mut self, rule: &'static str, severity: Severity, node: &str, message: String) {
-        self.issues.push(Issue {
-            rule,
-            severity,
-            nodes: vec![node.to_string()],
-            message,
-        });
+    pub fn issue(&mut self, rule: &'static str, severity: Severity, node: &str, args: &[&str]) {
+        let args = args.iter().map(|s| s.to_string()).collect();
+        self.issues.push(Issue::new(rule, severity, vec![node.to_string()], args));
     }
 
     /// `Ok(None)` when the file doesn't exist; a parse error becomes an issue on a config node.
@@ -107,7 +103,7 @@ impl Scan<'_> {
             Err(e) => {
                 let name = file_name(path);
                 let id = self.push(Kind::Config, scope, path, &name).id.clone();
-                self.issue("invalid-json", Severity::Error, &id, format!("JSON illisible : {name} ({e})"));
+                self.issue("invalid-json", Severity::Error, &id, &[&name, &e.to_string()]);
                 None
             }
         }

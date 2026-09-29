@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { GROUPS, SCOPES, groupOf, type GroupKey } from "../theme";
 import type { Graph, Scope } from "../types";
 import { home } from "./home";
@@ -24,11 +25,11 @@ export function Sidebar({ graph, hidden, onToggle, scope, onScope, onAccounts }:
       </div>
       {["Claude Desktop", "Codex", "Cursor"].map((h) => (
         <div key={h} className="harness off">
-          <span className="dot" /> {h} <span className="muted">bientôt</span>
+          <span className="dot" /> {h} <span className="muted">{t("soon")}</span>
         </div>
       ))}
 
-      <h3>Afficher</h3>
+      <h3>{t("Show")}</h3>
       {GROUPS.map((g) => (
         <label key={g.key} className="filter">
           <input type="checkbox" checked={!hidden.has(g.key)} onChange={() => onToggle(g.key)} />
@@ -48,11 +49,11 @@ export function Sidebar({ graph, hidden, onToggle, scope, onScope, onAccounts }:
         </button>
       ))}
       <div className="legend">
-        <span className="scope dashed" /> cassé / orphelin
+        <span className="scope dashed" /> {t("broken / orphan")}
       </div>
 
       <span className="spacer" />
-      <button onClick={onAccounts}>Gérer les comptes</button>
+      <button onClick={onAccounts}>{t("Manage accounts")}</button>
     </aside>
   );
 }

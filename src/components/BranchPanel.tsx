@@ -1,3 +1,4 @@
+import { issueText, t } from "../i18n";
 import { GROUPS, fmtTokens, type GroupKey } from "../theme";
 import type { Graph } from "../types";
 import { ItemList } from "./ItemList";
@@ -13,29 +14,29 @@ export function BranchPanel({ graph, group, onSelect }: { graph: Graph; group: G
   return (
     <aside className="detail">
       <div className="muted kind">
-        <span className="ring" style={{ borderColor: g.color }} /> Branche
+        <span className="ring" style={{ borderColor: g.color }} /> {t("Branch")}
       </div>
       <h2>{g.sidebar}</h2>
 
       <div className="stats">
         <div>
-          <span className="muted">Éléments</span>
+          <span className="muted">{t("Items")}</span>
           <strong>{items.length}</strong>
         </div>
         <div>
-          <span className="muted">Au démarrage</span>
+          <span className="muted">{t("At startup")}</span>
           <strong className="mono">~{fmtTokens(tokens)} tok</strong>
         </div>
       </div>
 
       {branchIssues.map((i, k) => (
         <div key={k} className={`card ${i.severity}`}>
-          <strong>{i.message}</strong>
+          <strong>{issueText(i)}</strong>
         </div>
       ))}
 
       <section>
-        <h3>Contenu</h3>
+        <h3>{t("Content")}</h3>
         <ItemList graph={graph} items={items} onSelect={onSelect} />
       </section>
     </aside>

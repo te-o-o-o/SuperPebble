@@ -82,7 +82,7 @@ fn watch(app: AppHandle, state: State<AppState>, config_dir: PathBuf, project: O
 #[tauri::command]
 fn open_path(state: State<AppState>, path: PathBuf) -> Result<(), String> {
     if !state.known.lock().unwrap().contains(&path) {
-        return Err("chemin inconnu du dernier scan".into());
+        return Err("path unknown to the last scan".into());
     }
     #[cfg(windows)]
     return open_windows(&path);

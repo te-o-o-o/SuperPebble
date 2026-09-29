@@ -1,3 +1,4 @@
+import { lang, t } from "./i18n";
 import type { Issue, Kind, PNode, Scope } from "./types";
 
 export type GroupKey = "plugin" | "skill" | "mcp" | "hook" | "agent" | "config";
@@ -6,10 +7,10 @@ export type GroupKey = "plugin" | "skill" | "mcp" | "hook" | "agent" | "config";
 export const GROUPS: { key: GroupKey; label: string; sidebar: string; kinds: Kind[]; color: string; angle: number }[] = [
   { key: "plugin", label: "Plugins", sidebar: "Plugins", kinds: ["plugin"], color: "#d9774b", angle: -90 },
   { key: "skill", label: "Skills", sidebar: "Skills", kinds: ["skill"], color: "#7aa7e0", angle: -22 },
-  { key: "mcp", label: "MCP", sidebar: "MCP servers", kinds: ["mcp"], color: "#5fbfb0", angle: 38 },
+  { key: "mcp", label: "MCP", sidebar: t("MCP servers"), kinds: ["mcp"], color: "#5fbfb0", angle: 38 },
   { key: "hook", label: "Hooks", sidebar: "Hooks", kinds: ["hook"], color: "#9cc27a", angle: 90 },
-  { key: "agent", label: "Agents", sidebar: "Agents & commands", kinds: ["agent", "command"], color: "#d8c07a", angle: 148 },
-  { key: "config", label: "Conf", sidebar: "Fichiers de conf", kinds: ["config"], color: "#b9a3e8", angle: 208 },
+  { key: "agent", label: "Agents", sidebar: t("Agents & commands"), kinds: ["agent", "command"], color: "#d8c07a", angle: 148 },
+  { key: "config", label: t("Config"), sidebar: t("Config files"), kinds: ["config"], color: "#b9a3e8", angle: 208 },
 ];
 
 export const groupOf = (kind: Kind) => GROUPS.find((g) => g.kinds.includes(kind))!;
@@ -19,7 +20,7 @@ export const COLORS = { center: "#d9774b", error: "#e0645a", warning: "#e0a24a",
 /** Scopes, by increasing precedence. Filled badges, so they read apart from the kind-coloured outlines. */
 export const SCOPES: { key: Scope; letter: string; label: string; where: string; color: string }[] = [
   { key: "user", letter: "u", label: "user", where: "~/.claude", color: "#d8d3c8" },
-  { key: "project", letter: "p", label: "projet", where: ".claude/", color: "#f08bb4" },
+  { key: "project", letter: "p", label: t("project"), where: ".claude/", color: "#f08bb4" },
   { key: "local", letter: "l", label: "local", where: "*.local.*", color: "#ffd166" },
   { key: "managed", letter: "m", label: "managed", where: "/etc, /Library", color: "#8fb3ff" },
 ];
@@ -28,21 +29,21 @@ export const scopeOf = (s: Scope) => SCOPES.find((x) => x.key === s)!;
 export const KIND_LABEL: Record<Kind, string> = {
   plugin: "Plugin",
   skill: "Skill",
-  mcp: "MCP server",
+  mcp: t("MCP server"),
   agent: "Agent",
-  command: "Command",
+  command: t("Command"),
   hook: "Hook",
-  config: "Fichier de conf",
+  config: t("Config file"),
 };
 
 /** Short label drawn on the pebble for the worst issue of a node. */
 export const RULE_CHIP: Record<string, string> = {
-  "orphan-mcp": "introuvable",
-  "broken-hook": "cassé",
+  "orphan-mcp": t("not found"),
+  "broken-hook": t("broken"),
   "plaintext-secret": "secret",
-  duplicate: "doublon",
-  "invalid-skill": "invalide",
-  "invalid-json": "illisible",
+  duplicate: t("duplicate"),
+  "invalid-skill": t("invalid"),
+  "invalid-json": t("unreadable"),
 };
 
 export function seed(id: string) {
@@ -53,12 +54,12 @@ export function seed(id: string) {
 
 export const fmtTokens = (t: number) => (t >= 1000 ? `${(t / 1000).toFixed(1)}k` : `${t}`);
 
-const rtf = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });
+const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
 export function relTime(unixSecs: number) {
   const s = unixSecs - Date.now() / 1000;
   const units: [Intl.RelativeTimeFormatUnit, number][] = [["year", 31536000], ["month", 2592000], ["day", 86400], ["hour", 3600], ["minute", 60]];
   for (const [u, n] of units) if (Math.abs(s) >= n) return rtf.format(Math.round(s / n), u);
-  return "à l'instant";
+  return t("just now");
 }
 
 export const basename = (p: string) => p.replace(/["']/g, "").split("/").pop() ?? p;

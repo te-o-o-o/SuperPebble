@@ -1,5 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 import { COLORS, GROUPS, RULE_CHIP, fmtTokens, groupOf, hint, issuesByNode, type GroupKey } from "./theme";
+import { t } from "./i18n";
 import type { Graph, PNode, Scope } from "./types";
 
 export type PebbleData = {
@@ -15,7 +16,7 @@ export type PebbleData = {
   selected?: boolean;
   /** Something else is selected and this isn't linked to it. */
   dim?: boolean;
-  /** Node id for items, group key for groups and "+N autres" / "réduire". */
+  /** Node id for items, group key for groups and "+N more" / "collapse". */
   target: string;
   w: number;
   h: number;
@@ -25,7 +26,7 @@ export type RoughEdgeData = { color: string; dashed?: boolean; active?: boolean;
 
 const GROUP_RADIUS = 260;
 const ITEM_DIST = 190;
-/** Items shown per collapsed group, the rest behind "+N autres". */
+/** Items shown per collapsed group, the rest behind "+N more". */
 const COLLAPSED_MAX = 5;
 const PER_COLUMN = 6;
 
@@ -113,7 +114,7 @@ export function layout(graph: Graph, hidden: Set<GroupKey>, expanded: Set<string
     const shown = open ? items : items.slice(0, COLLAPSED_MAX);
     const datas = shown.map(itemData);
     if (collapsible) {
-      const label = open ? "‹ réduire" : `+ ${items.length - shown.length} autres`;
+      const label = open ? t("‹ collapse") : t("+ {0} more", items.length - shown.length);
       datas.push({ variant: "more", label, color: g.color, dashed: true, target: g.key, w: 124, h: 40 });
     }
     const slots = fan(datas, gpos, g.angle, gid);

@@ -56,7 +56,32 @@ pub struct Issue {
     pub rule: &'static str,
     pub severity: Severity,
     pub nodes: Vec<String>,
+    /// What fills the rule's message; the UI renders them in the user's language.
+    pub args: Vec<String>,
+    /// English message, for the CLI and as a fallback.
     pub message: String,
+}
+
+impl Issue {
+    pub fn new(rule: &'static str, severity: Severity, nodes: Vec<String>, args: Vec<String>) -> Self {
+        let a = |i: usize| args.get(i).map_or("", String::as_str);
+        let message = match rule {
+            "orphan-mcp" => format!("Orphan MCP: {} (command not found)", a(0)),
+            "plaintext-secret" => format!("Plaintext secret: {} ({})", a(0), a(1)),
+            "broken-hook" => format!("Broken hook: {} ({} not found)", a(0), a(1)),
+            "duplicate" => format!("Duplicate: {}", a(0)),
+            "invalid-skill" => format!("Invalid {}: {} ({})", a(0), a(1), a(2)),
+            "invalid-json" => format!("Unreadable JSON: {} ({})", a(0), a(1)),
+            _ => rule.to_string(),
+        };
+        Issue {
+            rule,
+            severity,
+            nodes,
+            args,
+            message,
+        }
+    }
 }
 
 #[derive(Serialize, Debug)]

@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { t } from "../i18n";
 
 // Linux only: the window has no native decorations (see tauri.linux.conf.json).
 // macOS keeps its own traffic lights over the transparent title bar.
@@ -10,13 +11,13 @@ export function WindowControls() {
   const w = getCurrentWindow();
   return (
     <div className="window-controls">
-      <button onClick={() => w.minimize()} aria-label="Réduire">
+      <button onClick={() => w.minimize()} aria-label={t("Minimize")}>
         <svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg>
       </button>
-      <button onClick={() => w.toggleMaximize()} aria-label="Agrandir">
+      <button onClick={() => w.toggleMaximize()} aria-label={t("Maximize")}>
         <svg viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1" /></svg>
       </button>
-      <button className="close" onClick={() => w.close()} aria-label="Fermer">
+      <button className="close" onClick={() => w.close()} aria-label={t("Close")}>
         <svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2l-6 6" /></svg>
       </button>
     </div>

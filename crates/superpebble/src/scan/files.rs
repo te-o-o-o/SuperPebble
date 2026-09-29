@@ -18,7 +18,7 @@ pub fn dir_items(s: &mut Scan, dir: &Path, scope: Scope, parent: Option<&str>) {
                 "invalid-skill",
                 Severity::Error,
                 &id,
-                format!("Skill invalide : {} (SKILL.md absent)", file_name(&sub)),
+                &["skill", &file_name(&sub), "SKILL.md missing"],
             );
         }
     }
@@ -58,7 +58,12 @@ fn md_node(s: &mut Scan, kind: Kind, scope: Scope, path: &Path, fallback: &str, 
     // Commands and agents work without frontmatter; a skill needs it.
     match fm {
         Err(e) if kind == Kind::Skill || raw.is_some() => {
-            s.issue("invalid-skill", Severity::Error, &id, format!("{kind:?} invalide : {name} ({e})"));
+            s.issue(
+                "invalid-skill",
+                Severity::Error,
+                &id,
+                &[&format!("{kind:?}").to_lowercase(), &name, &e],
+            );
         }
         _ => {}
     }
@@ -74,10 +79,10 @@ fn frontmatter(text: &str) -> (Option<String>, Result<Value, String>) {
         .strip_prefix("---")
         .and_then(|r| r.strip_prefix('\n').or(r.strip_prefix("\r\n")))
     else {
-        return (None, Err("frontmatter absent".into()));
+        return (None, Err("frontmatter missing".into()));
     };
     let Some(end) = rest.find("\n---") else {
-        return (None, Err("frontmatter non fermé".into()));
+        return (None, Err("frontmatter not closed".into()));
     };
     let raw = &rest[..end];
     let parsed = serde_yaml::from_str::<Value>(raw).map_err(|e| e.to_string());

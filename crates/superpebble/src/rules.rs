@@ -9,38 +9,22 @@ use std::sync::OnceLock;
 pub fn check(nodes: &[Node]) -> Vec<Issue> {
     let mut out = vec![];
     for n in nodes.iter().filter(|n| n.enabled) {
-        let issue = |rule, severity, message| Issue {
-            rule,
-            severity,
-            nodes: vec![n.id.clone()],
-            message,
-        };
+        let issue =
+            |rule, severity, args: &[&str]| Issue::new(rule, severity, vec![n.id.clone()], args.iter().map(|s| s.to_string()).collect());
         match n.kind {
             Kind::Mcp => {
                 if let Some(cmd) = n.meta["command"].as_str() {
                     if !found(&expand(cmd, n)) {
-                        out.push(issue(
-                            "orphan-mcp",
-                            Severity::Error,
-                            format!("MCP orphelin : {} (commande introuvable)", n.name),
-                        ));
+                        out.push(issue("orphan-mcp", Severity::Error, &[&n.name]));
                     }
                 }
                 for key in n.meta["plaintext_secrets"].as_array().into_iter().flatten() {
-                    out.push(issue(
-                        "plaintext-secret",
-                        Severity::Warning,
-                        format!("Secret en clair : {} ({})", key.as_str().unwrap_or(""), n.name),
-                    ));
+                    out.push(issue("plaintext-secret", Severity::Warning, &[key.as_str().unwrap_or(""), &n.name]));
                 }
             }
             Kind::Hook => {
                 if let Some(missing) = n.meta["command"].as_str().and_then(|c| missing_in_command(c, n)) {
-                    out.push(issue(
-                        "broken-hook",
-                        Severity::Error,
-                        format!("Hook cassé : {} ({missing} introuvable)", n.name),
-                    ));
+                    out.push(issue("broken-hook", Severity::Error, &[&n.name, &missing]));
                 }
             }
             _ => {}
@@ -61,11 +45,9 @@ fn duplicates(nodes: &[Node]) -> Vec<Issue> {
     groups
         .into_values()
         .filter(|g| g.len() > 1)
-        .map(|g| Issue {
-            rule: "duplicate",
-            severity: Severity::Warning,
-            nodes: g.iter().map(|n| n.id.clone()).collect(),
-            message: format!("Doublon : {}", g[0].name),
+        .map(|g| {
+            let nodes = g.iter().map(|n| n.id.clone()).collect();
+            Issue::new("duplicate", Severity::Warning, nodes, vec![g[0].name.clone()])
         })
         .collect()
 }

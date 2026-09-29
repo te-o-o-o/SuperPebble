@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
+import { lang, t } from "../i18n";
 import type { Account } from "../types";
 import { home } from "./home";
 
@@ -28,22 +29,29 @@ export function AccountsDialog({ open, accounts, onClose, onChange }: Props) {
         setError(undefined);
         setDone(success);
       },
-      (e) => setError(String(e)),
+      (e) => setError(t(String(e))),
     );
 
   const source = accounts.find((a) => a.is_default);
   return (
     <dialog ref={ref} className="accounts" onClose={onClose} onClick={(e) => e.target === ref.current && onClose()}>
       <header>
-        <h2>Comptes</h2>
-        <button className="ghost" onClick={onClose} aria-label="Fermer">
+        <h2>{t("Accounts")}</h2>
+        <button className="ghost" onClick={onClose} aria-label={t("Close")}>
           ✕
         </button>
       </header>
-      <p className="muted intro">
-        Un compte est un dossier <code>CLAUDE_CONFIG_DIR</code>. Partager un élément crée un lien symbolique vers{" "}
-        <code>{home(source?.config_dir ?? "~/.claude")}</code>. MCP, plugins et identifiants restent propres à chaque compte.
-      </p>
+      {lang === "fr" ? (
+        <p className="muted intro">
+          Un compte est un dossier <code>CLAUDE_CONFIG_DIR</code>. Partager un élément crée un lien symbolique vers{" "}
+          <code>{home(source?.config_dir ?? "~/.claude")}</code>. MCP, plugins et identifiants restent propres à chaque compte.
+        </p>
+      ) : (
+        <p className="muted intro">
+          An account is a <code>CLAUDE_CONFIG_DIR</code> folder. Sharing an item creates a symlink to{" "}
+          <code>{home(source?.config_dir ?? "~/.claude")}</code>. MCP servers, plugins and credentials stay per account.
+        </p>
+      )}
 
       {accounts.map((a) => (
         <AccountCard key={a.config_dir} a={a} run={run} />
@@ -63,24 +71,24 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
         <strong>{a.name}</strong>
         <code className="muted">{home(a.config_dir)}</code>
         <span className="spacer" />
-        <span className={a.email ? "muted" : "warn"}>{a.email ?? "jamais connecté"}</span>
+        <span className={a.email ? "muted" : "warn"}>{a.email ?? t("never logged in")}</span>
       </div>
       {a.is_default ? (
-        <p className="muted small">Compte source : les autres partagent ses éléments.</p>
+        <p className="muted small">{t("Source account: the others share its items.")}</p>
       ) : (
         <>
           <div className="row">
-            <span className="muted small label">Partagé</span>
+            <span className="muted small label">{t("Shared")}</span>
             {a.shared.map((s) => (
               <button
                 key={s.item}
                 className={`chip-toggle${s.link ? " on" : ""}`}
                 disabled={s.own}
-                title={s.own ? `Ce compte a déjà son propre ${s.item}` : s.link ? `Lien vers ${s.link}` : "Non partagé"}
+                title={s.own ? t("This account already has its own {0}", s.item) : s.link ? t("Link to {0}", s.link) : t("Not shared")}
                 onClick={() => run(api.setShared(a.config_dir, s.item, !s.link))}
               >
                 {s.item}
-                {s.own && " · propre"}
+                {s.own && t(" · own")}
               </button>
             ))}
           </div>
@@ -88,11 +96,11 @@ function AccountCard({ a, run }: { a: Account; run: (p: Promise<Account[]>) => v
             <span className="muted small label">Alias</span>
             <code>claude-{a.name}</code>
             {a.alias.kind === "manual" ? (
-              <span className="muted small">défini à la main, ~/.zshrc ligne {a.alias.line}</span>
+              <span className="muted small">{t("defined by hand, ~/.zshrc line {0}", a.alias.line)}</span>
             ) : (
               <label className="switch">
                 <input type="checkbox" checked={a.alias.kind === "managed"} onChange={(e) => run(api.setAlias(a.config_dir, e.target.checked))} />
-                dans ~/.zshrc
+                {t("in ~/.zshrc")}
               </label>
             )}
           </div>}
@@ -112,19 +120,19 @@ function NewAccount({ run }: { run: (p: Promise<Account[]>, success?: string) =>
     run(
       api.createAccount(name, [...share], alias),
       alias
-        ? `Compte créé. Ouvre un nouveau terminal, lance claude-${name} puis /login.`
-        : `Compte créé. Lance CLAUDE_CONFIG_DIR=~/.claude-${name} claude puis /login.`,
+        ? t("Account created. Open a new terminal, run claude-{0} then /login.", name)
+        : t("Account created. Run CLAUDE_CONFIG_DIR=~/.claude-{0} claude then /login.", name),
     ).then(() => setName(""));
 
   return (
     <section className="account new">
-      <strong>Nouveau compte</strong>
+      <strong>{t("New account")}</strong>
       <div className="row">
-        <input value={name} onChange={(e) => setName(e.target.value.toLowerCase())} placeholder="nom, ex. client-x" spellCheck={false} />
+        <input value={name} onChange={(e) => setName(e.target.value.toLowerCase())} placeholder={t("name, e.g. client-x")} spellCheck={false} />
         <code className="muted">~/.claude-{name || "…"}</code>
       </div>
       <div className="row">
-        <span className="muted small label">Partager</span>
+        <span className="muted small label">{t("Share")}</span>
         {SHAREABLE.map((item) => (
           <button
             key={item}
@@ -142,11 +150,11 @@ function NewAccount({ run }: { run: (p: Promise<Account[]>, success?: string) =>
       {shellAliases && (
         <label className="switch">
           <input type="checkbox" checked={alias} onChange={(e) => setAlias(e.target.checked)} />
-          Ajouter l'alias <code>claude-{name || "…"}</code> dans ~/.zshrc
+          {t("Add the alias")} <code>claude-{name || "…"}</code> {t("to ~/.zshrc")}
         </label>
       )}
       <button className="primary" disabled={!valid} onClick={create}>
-        Créer le compte
+        {t("Create account")}
       </button>
     </section>
   );

@@ -124,17 +124,17 @@ fn valid_name(name: &str) -> bool {
 
 pub fn create(name: &str, share: &[String], alias: bool) -> Result<(), String> {
     if !valid_name(name) {
-        return Err("Nom invalide : minuscules, chiffres, - et _ uniquement.".into());
+        return Err("Invalid name: lowercase letters, digits, - and _ only.".into());
     }
     let dir = home().join(format!(".claude-{name}"));
     if dir.exists() {
-        return Err(format!("{} existe déjà.", dir.display()));
+        return Err(format!("{} already exists.", dir.display()));
     }
     if alias && cfg!(windows) {
-        return Err("Les alias shell (~/.zshrc) ne sont pas disponibles sous Windows.".into());
+        return Err("Shell aliases (~/.zshrc) are not available on Windows.".into());
     }
     if let Some(line) = manual_alias(name).filter(|_| alias) {
-        return Err(format!("claude-{name} est déjà défini à la main dans ~/.zshrc (ligne {line})."));
+        return Err(format!("claude-{name} is already defined by hand in ~/.zshrc (line {line})."));
     }
     std::fs::create_dir(&dir).map_err(|e| e.to_string())?;
     for item in share {
@@ -150,12 +150,12 @@ pub fn create(name: &str, share: &[String], alias: bool) -> Result<(), String> {
 /// its own `skills/` must move it away first.
 pub fn set_shared(config_dir: &Path, item: &str, on: bool) -> Result<(), String> {
     if !is_named_account(config_dir) || !SHAREABLE.contains(&item) {
-        return Err("Partage impossible pour ce compte ou cet élément.".into());
+        return Err("This account or item cannot be shared.".into());
     }
     let link = config_dir.join(item);
     let is_link = std::fs::symlink_metadata(&link).is_ok_and(|m| m.file_type().is_symlink());
     if !is_link && link.exists() {
-        return Err(format!("{item} existe déjà dans ce compte : déplace-le ou vide-le d'abord."));
+        return Err(format!("{item} already exists in this account: move or empty it first."));
     }
     if is_link {
         std::fs::remove_file(&link).map_err(|e| e.to_string())?;
@@ -200,10 +200,10 @@ fn manual_alias(name: &str) -> Option<usize> {
 /// Adds or removes `claude-<name>` in our `~/.zshrc` block, after a snapshot of the file.
 pub fn set_alias(config_dir: &Path, on: bool) -> Result<(), String> {
     if !is_named_account(config_dir) {
-        return Err("Alias impossible pour ce compte.".into());
+        return Err("This account cannot have an alias.".into());
     }
     if cfg!(windows) {
-        return Err("Les alias shell (~/.zshrc) ne sont pas disponibles sous Windows.".into());
+        return Err("Shell aliases (~/.zshrc) are not available on Windows.".into());
     }
     let name = config_dir
         .file_name()
@@ -215,7 +215,7 @@ pub fn set_alias(config_dir: &Path, on: bool) -> Result<(), String> {
     let text = std::fs::read_to_string(&path).unwrap_or_default();
     let aliases = zshrc::parse(&text);
     if let Some(line) = aliases.manual.get(&name).filter(|_| on) {
-        return Err(format!("claude-{name} est déjà défini à la main dans ~/.zshrc (ligne {line})."));
+        return Err(format!("claude-{name} is already defined by hand in ~/.zshrc (line {line})."));
     }
     let mut managed = aliases.managed;
     if on {
