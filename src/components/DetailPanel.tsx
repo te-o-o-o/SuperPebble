@@ -5,8 +5,11 @@ import type { Graph, PNode } from "../types";
 import { home } from "./home";
 import { ItemList } from "./ItemList";
 import { ScopeBadge } from "./ScopeBadge";
+import { movable } from "./TransferDialog";
 
-export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; node?: PNode; onOpen: (path: string) => void; onSelect: (id: string) => void }) {
+type Props = { graph: Graph; node?: PNode; onOpen: (path: string) => void; onSelect: (id: string) => void; onMove?: (n: PNode) => void };
+
+export function DetailPanel({ graph, node, onOpen, onSelect, onMove }: Props) {
   if (!node) {
     return (
       <aside className="detail empty">
@@ -93,9 +96,7 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
       <span className="spacer" />
       <div className="actions">
         <button onClick={() => onOpen(node.source)}>{t("Open in editor")}</button>
-        <button className="danger" disabled title={t("Comes in M2")}>
-          {t("Delete…")}
-        </button>
+        {onMove && movable(node) && <button onClick={() => onMove(node)}>{t("Move…")}</button>}
       </div>
     </aside>
   );

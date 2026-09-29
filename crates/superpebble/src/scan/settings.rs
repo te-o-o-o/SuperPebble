@@ -66,6 +66,8 @@ pub fn hooks(s: &mut Scan, hooks: Option<&Value>, scope: Scope, source: &Path, p
                     "matcher": group.get("matcher"),
                     "type": h.get("type"),
                     "command": h.get("command"),
+                    // Position in the file, to find it again when moving it.
+                    "index": [i, j],
                 });
                 if let Some((id, root)) = parent {
                     n.parent = Some(id.to_string());

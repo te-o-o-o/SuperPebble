@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t } from "./i18n";
-import type { Account, Graph } from "./types";
+import type { Account, Graph, Scope } from "./types";
 
 // Outside Tauri (plain `npm run dev`), serve the graph from `npm run fixture` so the UI can be worked on in a browser.
 const inTauri = "__TAURI_INTERNALS__" in window;
@@ -17,6 +17,8 @@ export const api = {
   createAccount: (name: string, share: string[], alias: boolean): Promise<Account[]> => tauriOnly("create_account", { name, share, alias }),
   setShared: (configDir: string, item: string, on: boolean): Promise<Account[]> => tauriOnly("set_shared", { configDir, item, on }),
   setAlias: (configDir: string, on: boolean): Promise<Account[]> => tauriOnly("set_alias", { configDir, on }),
+  transfer: (configDir: string, project: string | null, id: string, toConfigDir: string, toScope: Scope, copy: boolean): Promise<void> =>
+    tauriOnly("transfer", { configDir, project, id, toConfigDir, toScope, copy }),
   projects: (configDir: string): Promise<string[]> => (inTauri ? invoke("projects", { configDir }) : Promise.resolve([])),
   scan: (configDir: string, project: string | null): Promise<Graph> =>
     inTauri ? invoke("scan", { configDir, project }) : fetch("/graph.json").then((r) => r.json()),

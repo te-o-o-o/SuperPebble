@@ -8,7 +8,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Mutex;
 use std::time::Duration;
-use superpebble::{accounts, model::Graph, wsl, ScanContext};
+use superpebble::model::{Graph, Scope};
+use superpebble::{accounts, transfer, wsl, ScanContext};
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Default)]
@@ -49,6 +50,19 @@ async fn scan(state: State<'_, AppState>, config_dir: PathBuf, project: Option<P
     let g = superpebble::scan(&ScanContext { config_dir, project });
     *state.known.lock().unwrap() = g.nodes.iter().map(|n| n.source.clone()).collect();
     Ok(g)
+}
+
+/// Moves or copies node `id` of this account/project; the watcher triggers the rescan.
+#[tauri::command]
+fn transfer(
+    config_dir: PathBuf,
+    project: Option<PathBuf>,
+    id: String,
+    to_config_dir: PathBuf,
+    to_scope: Scope,
+    copy: bool,
+) -> Result<(), String> {
+    transfer::transfer(&ScanContext { config_dir, project }, &id, &to_config_dir, to_scope, copy)
 }
 
 /// Replaces the previous watcher; emits `config-changed` on any write under the watched paths.
@@ -164,6 +178,7 @@ fn main() {
             set_alias,
             projects,
             scan,
+            transfer,
             watch,
             open_path
         ])
