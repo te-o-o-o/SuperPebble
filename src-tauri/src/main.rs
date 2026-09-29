@@ -2,17 +2,18 @@
 // The UI has no filesystem access of its own.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{EventKind, PollWatcher, RecursiveMode, Watcher};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Mutex;
-use superpebble::{accounts, model::Graph, ScanContext};
+use std::time::Duration;
+use superpebble::{accounts, model::Graph, wsl, ScanContext};
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Default)]
 struct AppState {
-    watcher: Mutex<Option<RecommendedWatcher>>,
+    watcher: Mutex<Option<Box<dyn Watcher + Send>>>,
     /// Files the last scan found: the only ones `open_path` accepts.
     known: Mutex<HashSet<PathBuf>>,
 }
@@ -53,16 +54,23 @@ async fn scan(state: State<'_, AppState>, config_dir: PathBuf, project: Option<P
 /// Replaces the previous watcher; emits `config-changed` on any write under the watched paths.
 #[tauri::command]
 fn watch(app: AppHandle, state: State<AppState>, config_dir: PathBuf, project: Option<PathBuf>) -> Result<(), String> {
+    let in_wsl = wsl::root(&config_dir).is_some();
     let targets = ScanContext { config_dir, project }.watched_paths();
     let matches = targets.clone();
-    let mut w = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+    let on_event = move |res: notify::Result<notify::Event>| {
         let Ok(e) = res else { return };
         // Claude Code reads these files constantly; only writes matter.
         if !matches!(e.kind, EventKind::Access(_)) && e.paths.iter().any(|p| matches.iter().any(|t| p.starts_with(t))) {
             let _ = app.emit("config-changed", ());
         }
-    })
-    .map_err(|e| e.to_string())?;
+    };
+    // Windows gets no change events from \\wsl.localhost: poll there instead.
+    let mut w: Box<dyn Watcher + Send> = if in_wsl {
+        let config = notify::Config::default().with_poll_interval(Duration::from_secs(2));
+        Box::new(PollWatcher::new(on_event, config).map_err(|e| e.to_string())?)
+    } else {
+        Box::new(notify::recommended_watcher(on_event).map_err(|e| e.to_string())?)
+    };
     for t in &targets {
         // Files are replaced by rename on save, so watch their parent dir rather than the inode.
         let res = if t.is_dir() {

@@ -7,6 +7,7 @@ mod plugins;
 mod settings;
 
 use crate::model::*;
+use crate::wsl;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -27,10 +28,34 @@ impl ScanContext {
     /// `~/.claude.json` for the default account, `<config>/.claude.json` otherwise.
     pub fn claude_json(&self) -> PathBuf {
         let inside = self.config_dir.join(".claude.json");
-        if self.config_dir == home().join(".claude") && !inside.exists() {
-            home().join(".claude.json")
+        if self.config_dir == self.home().join(".claude") && !inside.exists() {
+            self.home().join(".claude.json")
         } else {
             inside
+        }
+    }
+
+    /// The account's `~`: the user's home inside the distro for a WSL account.
+    pub fn home(&self) -> PathBuf {
+        match wsl::root(&self.config_dir) {
+            Some(_) => self.config_dir.parent().map(Path::to_path_buf).unwrap_or_default(),
+            None => home(),
+        }
+    }
+
+    /// An absolute path read from a config file, as this OS opens it.
+    pub fn path(&self, p: &str) -> PathBuf {
+        match wsl::root(&self.config_dir) {
+            Some(root) if p.starts_with('/') => wsl::to_windows(&root, p),
+            _ => PathBuf::from(p),
+        }
+    }
+
+    /// `p` as config files spell it, e.g. the key of a project in `.claude.json`.
+    pub fn key(&self, p: &Path) -> String {
+        match wsl::root(&self.config_dir) {
+            Some(root) => wsl::to_linux(&root, p),
+            None => p.to_string_lossy().into_owned(),
         }
     }
 
@@ -129,7 +154,7 @@ pub fn scan(ctx: &ScanContext) -> Graph {
     }
 
     let mut issues = s.issues;
-    issues.extend(crate::rules::check(&s.nodes));
+    issues.extend(crate::rules::check(&s.nodes, ctx));
     Graph {
         config_dir: ctx.config_dir.clone(),
         project: ctx.project.clone(),

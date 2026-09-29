@@ -1,5 +1,6 @@
 use super::{file_name, Scan};
 use crate::model::{Kind, Scope};
+use crate::wsl;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -28,7 +29,11 @@ pub fn scan(s: &mut Scan) -> Settings {
         files.push((Scope::Project, p.join(".claude/settings.json")));
         files.push((Scope::Local, p.join(".claude/settings.local.json")));
     }
-    files.push((Scope::Managed, managed_path()));
+    let managed = match wsl::root(&s.ctx.config_dir) {
+        Some(_) => s.ctx.path("/etc/claude-code/managed-settings.json"),
+        None => managed_path(),
+    };
+    files.push((Scope::Managed, managed));
 
     let mut out = Settings::default();
     for (scope, path) in files {

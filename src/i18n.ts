@@ -115,6 +115,7 @@ const FR: Record<string, string> = {
   "Accounts": "Comptes",
   "never logged in": "jamais connecté",
   "Source account: the others share its items.": "Compte source : les autres partagent ses éléments.",
+  "WSL account: read-only for now.": "Compte WSL : lecture seule pour l'instant.",
   "Shared": "Partagé",
   "This account already has its own {0}": "Ce compte a déjà son propre {0}",
   "Link to {0}": "Lien vers {0}",

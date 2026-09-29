@@ -1,6 +1,6 @@
 //! Markdown-based elements: skills, agents, commands, CLAUDE.md memory.
 
-use super::{file_name, home, tokens, Scan};
+use super::{file_name, tokens, Scan};
 use crate::model::{Kind, Scope, Severity};
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -102,7 +102,7 @@ pub fn memory(s: &mut Scan) {
             continue;
         }
         let mut seen = HashSet::new();
-        let total = with_imports(&path, &mut seen, 0);
+        let total = with_imports(&path, &mut seen, 0, &s.ctx.home());
         let imports: Vec<_> = seen.into_iter().filter(|p| *p != path).collect();
         let n = s.push(Kind::Config, scope, &path, &file_name(&path));
         n.tokens = Some(tokens(&total));
@@ -110,7 +110,7 @@ pub fn memory(s: &mut Scan) {
     }
 }
 
-fn with_imports(path: &Path, seen: &mut HashSet<PathBuf>, depth: u8) -> String {
+fn with_imports(path: &Path, seen: &mut HashSet<PathBuf>, depth: u8, home: &Path) -> String {
     if depth > 5 || !seen.insert(path.to_path_buf()) {
         return String::new();
     }
@@ -120,11 +120,11 @@ fn with_imports(path: &Path, seen: &mut HashSet<PathBuf>, depth: u8) -> String {
     for word in text.split_whitespace() {
         let Some(target) = word.strip_prefix('@') else { continue };
         let target = match target.strip_prefix("~/") {
-            Some(rest) => home().join(rest),
+            Some(rest) => home.join(rest),
             None => base.join(target),
         };
         if target.is_file() {
-            out += &with_imports(&target, seen, depth + 1);
+            out += &with_imports(&target, seen, depth + 1, home);
         }
     }
     out

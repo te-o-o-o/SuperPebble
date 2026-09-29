@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 pub fn scan(s: &mut Scan, st: &Settings) {
     let registry = s.ctx.config_dir.join("plugins/installed_plugins.json");
     let Some(v) = s.read_json(&registry, Scope::User) else { return };
-    let project = s.ctx.project.as_ref().map(|p| p.to_string_lossy().into_owned());
+    let project = s.ctx.project.as_ref().map(|p| s.ctx.key(p));
 
     for (id, installs) in v["plugins"].as_object().into_iter().flatten() {
         for inst in installs.as_array().into_iter().flatten() {
@@ -21,7 +21,7 @@ pub fn scan(s: &mut Scan, st: &Settings) {
             if scope != Scope::User && inst["projectPath"].as_str() != project.as_deref() {
                 continue;
             }
-            let Some(root) = inst["installPath"].as_str().map(PathBuf::from) else {
+            let Some(root) = inst["installPath"].as_str().map(|p| s.ctx.path(p)) else {
                 continue;
             };
             plugin(s, id, inst, &root, scope, st.enabled_plugins.get(id) == Some(&true));
