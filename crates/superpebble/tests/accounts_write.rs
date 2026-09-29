@@ -16,7 +16,7 @@ fn create_share_alias_roundtrip() {
     std::env::remove_var("CLAUDE_CONFIG_DIR");
 
     // A hand-written alias blocks creation before anything is written.
-    assert!(create("work", &[], true).unwrap_err().contains("ligne 2"));
+    assert!(create("work", &[], true).unwrap_err().contains("line 2"));
     assert!(!home.join(".claude-work").exists());
 
     create("perso", &["skills".into(), "CLAUDE.md".into()], true).unwrap();

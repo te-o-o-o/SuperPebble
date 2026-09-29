@@ -81,7 +81,7 @@ cargo run -p superpebble -- accounts    # accounts, sharing and shell aliases
 ## Several accounts
 
 An account is a config dir: `~/.claude` is the default one, `~/.claude-work`
-is the account `work`. From **Gérer les comptes**, SuperPebble creates the dir,
+is the account `work`. From **Manage accounts**, SuperPebble creates the dir,
 links whatever you want shared with the default account, and adds the alias:
 
 ```sh

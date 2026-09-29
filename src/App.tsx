@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { api } from "./api";
+import { t } from "./i18n";
 import { AccountsDialog } from "./components/AccountsDialog";
 import { BranchPanel } from "./components/BranchPanel";
 import { DetailPanel } from "./components/DetailPanel";
@@ -52,7 +53,7 @@ export default function App() {
         setGraph(g);
         setError(undefined);
       },
-      (e) => setError(String(e)),
+      (e) => setError(t(String(e))),
     );
   }, [account, project]);
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import rough from "roughjs";
+import { LANGS, lang, setLang, t, type Lang } from "../i18n";
 import { COLORS, relTime } from "../theme";
 import type { Account } from "../types";
 import { home } from "./home";
@@ -23,7 +24,7 @@ export function TopBar(props: {
   scannedAt?: number;
   onRescan: () => void;
 }) {
-  // Re-render every 30s so "scan il y a X" stays true.
+  // Re-render every 30s so "scanned X ago" stays true.
   const [, tick] = useState(0);
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 30000);
@@ -39,7 +40,7 @@ export function TopBar(props: {
         SuperPebble
       </div>
       <span className="sep">/</span>
-      <label className="select" title="Compte">
+      <label className="select" title={t("Account")}>
         <select value={props.account} onChange={(e) => props.onAccount(e.target.value)}>
           {props.accounts.map((a) => (
             <option key={a.config_dir} value={a.config_dir}>
@@ -49,9 +50,9 @@ export function TopBar(props: {
         </select>
       </label>
       <span className="sep">/</span>
-      <label className="select" title="Projet">
+      <label className="select" title={t("Project")}>
         <select className="mono" value={props.project ?? ""} onChange={(e) => props.onProject(e.target.value || null)}>
-          <option value="">aucun projet</option>
+          <option value="">{t("no project")}</option>
           {props.projects.map((p) => (
             <option key={p} value={p}>
               {home(p)}
@@ -62,15 +63,24 @@ export function TopBar(props: {
       <span className="spacer" data-tauri-drag-region />
       {props.scannedAt && (
         <span className="status" data-tauri-drag-region>
-          scan {relTime(props.scannedAt)}
+          {t("scanned {0}", relTime(props.scannedAt))}
         </span>
       )}
-      <button className="ghost" onClick={props.onRescan} title="Rescanner">
+      <button className="ghost" onClick={props.onRescan} title={t("Rescan")}>
         <svg viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" /></svg>
       </button>
-      <button className="ghost" disabled title="Snapshot : arrive avec le ménage (M2)">
+      <button className="ghost" disabled title={t("Snapshot: comes with the cleanup (M2)")}>
         Snapshot
       </button>
+      <label className="select" title={t("Language")}>
+        <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+          {LANGS.map((l) => (
+            <option key={l} value={l}>
+              {l.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      </label>
       <WindowControls />
     </header>
   );

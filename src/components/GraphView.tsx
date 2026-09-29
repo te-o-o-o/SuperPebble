@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { ReactFlow, useReactFlow, type NodeMouseHandler } from "@xyflow/react";
+import { t } from "../i18n";
 import { layout, type PebbleData } from "../layout";
 import type { GroupKey } from "../theme";
 import type { Graph, Scope } from "../types";
@@ -55,8 +56,8 @@ export function GraphView({ graph, hidden, expanded, selected, scope, onSelect, 
         proOptions={{ hideAttribution: true }}
       />
       <div className="zoom">
-        <button onClick={() => zoomIn()} aria-label="Zoomer">+</button>
-        <button onClick={() => zoomOut()} aria-label="Dézoomer">−</button>
+        <button onClick={() => zoomIn()} aria-label={t("Zoom in")}>+</button>
+        <button onClick={() => zoomOut()} aria-label={t("Zoom out")}>−</button>
       </div>
     </div>
   );

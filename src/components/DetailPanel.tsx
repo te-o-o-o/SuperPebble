@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { issueText, t } from "../i18n";
 import { KIND_LABEL, fmtTokens, relTime, scopeOf } from "../theme";
 import type { Graph, PNode } from "../types";
 import { home } from "./home";
@@ -9,7 +10,7 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
   if (!node) {
     return (
       <aside className="detail empty">
-        <p className="muted">Sélectionne un galet pour voir son détail.</p>
+        <p className="muted">{t("Select a pebble to see its details.")}</p>
       </aside>
     );
   }
@@ -20,28 +21,28 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
   return (
     <aside className="detail">
       <div className="muted kind">
-        <ScopeBadge scope={node.scope} /> {KIND_LABEL[node.kind]} · scope {scopeOf(node.scope).label}
+        <ScopeBadge scope={node.scope} /> {t("{0} · scope {1}", KIND_LABEL[node.kind], scopeOf(node.scope).label)}
       </div>
       <h2>{node.name}</h2>
       <code className="path">{home(node.source)}</code>
 
       <div className="stats">
         <div>
-          <span className="muted">Au démarrage</span>
-          <strong className="mono">{node.tokens == null ? "inconnu" : `~${fmtTokens(node.tokens)} tok`}</strong>
+          <span className="muted">{t("At startup")}</span>
+          <strong className="mono">{node.tokens == null ? t("unknown") : `~${fmtTokens(node.tokens)} tok`}</strong>
         </div>
         <div>
-          <span className="muted">Modifié</span>
+          <span className="muted">{t("Modified")}</span>
           <strong>{node.modified ? relTime(node.modified) : "—"}</strong>
         </div>
       </div>
 
       {issues.map((i, k) => (
         <div key={k} className={`card ${i.severity}`}>
-          <strong>{i.message}</strong>
+          <strong>{issueText(i)}</strong>
           {others(i.nodes).map((o) => (
             <p key={o.id} className="muted">
-              Aussi dans le scope {scopeOf(o.scope).label} : <code>{home(o.source)}</code>
+              {t("Also in scope {0}:", scopeOf(o.scope).label)} <code>{home(o.source)}</code>
             </p>
           ))}
         </div>
@@ -49,7 +50,7 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
 
       {m.frontmatter && <Section title="Frontmatter"><LongText key={node.id} text={m.frontmatter} /></Section>}
       {node.kind === "mcp" && (
-        <Section title="Serveur">
+        <Section title={t("Server")}>
           <pre>
             {[
               `type: ${m.type}`,
@@ -74,7 +75,7 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
         </Section>
       )}
       {node.kind === "plugin" && (
-        <Section title="Contenu">
+        <Section title={t("Content")}>
           <ItemList graph={graph} items={graph.nodes.filter((n) => n.parent === node.id).sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))} showKind onSelect={onSelect} />
         </Section>
       )}
@@ -84,16 +85,16 @@ export function DetailPanel({ graph, node, onOpen, onSelect }: { graph: Graph; n
         </Section>
       )}
 
-      <label className="toggle" title="Lecture seule jusqu'au ménage (M2)">
-        <input type="checkbox" checked={node.enabled} disabled readOnly /> Actif
-        <span className="muted">lecture seule</span>
+      <label className="toggle" title={t("Read-only until the cleanup (M2)")}>
+        <input type="checkbox" checked={node.enabled} disabled readOnly /> {t("Enabled")}
+        <span className="muted">{t("read-only")}</span>
       </label>
 
       <span className="spacer" />
       <div className="actions">
-        <button onClick={() => onOpen(node.source)}>Ouvrir dans l'éditeur</button>
-        <button className="danger" disabled title="Arrive en M2">
-          Supprimer…
+        <button onClick={() => onOpen(node.source)}>{t("Open in editor")}</button>
+        <button className="danger" disabled title={t("Comes in M2")}>
+          {t("Delete…")}
         </button>
       </div>
     </aside>
@@ -118,7 +119,7 @@ function LongText({ text }: { text: string }) {
       <pre className={long && !open ? "clamped" : undefined}>{text}</pre>
       {long && (
         <button className="link" onClick={() => setOpen(!open)}>
-          {open ? "Réduire" : "Voir tout"}
+          {open ? t("Collapse") : t("Show all")}
         </button>
       )}
     </>

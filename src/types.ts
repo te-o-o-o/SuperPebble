@@ -20,6 +20,7 @@ export interface Issue {
   rule: string;
   severity: Severity;
   nodes: string[];
+  args: string[];
   message: string;
 }
 
