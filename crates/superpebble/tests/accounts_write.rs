@@ -32,7 +32,10 @@ fn create_share_alias_roundtrip() {
     assert!(set_shared(&perso, "agents", true).is_err());
     set_shared(&perso, "skills", false).unwrap();
     assert!(!perso.join("skills").exists() && home.join(".claude/skills").is_dir());
-    assert!(set_shared(&home.join(".claude"), "skills", true).is_err(), "default account is read-only");
+    assert!(
+        set_shared(&home.join(".claude"), "skills", true).is_err(),
+        "default account is read-only"
+    );
 
     set_alias(&perso, false).unwrap();
     assert_eq!(fs::read_to_string(home.join(".zshrc")).unwrap(), rc);

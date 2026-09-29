@@ -67,7 +67,11 @@ pub fn list() -> Vec<Account> {
         .map(|d| {
             let is_default = d == default_dir();
             let n = d.file_name().unwrap_or_default().to_string_lossy();
-            let name = if is_default { "default".to_string() } else { n.strip_prefix(".claude-").unwrap_or(&n).to_string() };
+            let name = if is_default {
+                "default".to_string()
+            } else {
+                n.strip_prefix(".claude-").unwrap_or(&n).to_string()
+            };
             let alias = match (aliases.manual.get(&name), aliases.managed.contains_key(&name)) {
                 (Some(&line), _) => Alias::Manual { line },
                 (None, true) => Alias::Managed,
@@ -77,16 +81,30 @@ pub fn list() -> Vec<Account> {
                 .iter()
                 .map(|item| {
                     let link = std::fs::read_link(d.join(item)).ok();
-                    Shared { item, own: link.is_none() && d.join(item).exists(), link }
+                    Shared {
+                        item,
+                        own: link.is_none() && d.join(item).exists(),
+                        link,
+                    }
                 })
                 .collect();
-            Account { email: email(&d), shared, alias, is_default, name, config_dir: d }
+            Account {
+                email: email(&d),
+                shared,
+                alias,
+                is_default,
+                name,
+                config_dir: d,
+            }
         })
         .collect()
 }
 
 fn email(config_dir: &Path) -> Option<String> {
-    let ctx = ScanContext { config_dir: config_dir.to_path_buf(), project: None };
+    let ctx = ScanContext {
+        config_dir: config_dir.to_path_buf(),
+        project: None,
+    };
     let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(ctx.claude_json()).ok()?).ok()?;
     v["oauthAccount"]["emailAddress"].as_str().map(String::from)
 }
@@ -97,7 +115,11 @@ fn is_named_account(p: &Path) -> bool {
 }
 
 fn valid_name(name: &str) -> bool {
-    !name.is_empty() && name != "default" && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
+    !name.is_empty()
+        && name != "default"
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
 }
 
 pub fn create(name: &str, share: &[String], alias: bool) -> Result<(), String> {
@@ -143,7 +165,11 @@ pub fn set_shared(config_dir: &Path, item: &str, on: bool) -> Result<(), String>
     }
     let src = default_dir().join(item);
     if !src.exists() {
-        let made = if item == "CLAUDE.md" { std::fs::write(&src, "") } else { std::fs::create_dir_all(&src) };
+        let made = if item == "CLAUDE.md" {
+            std::fs::write(&src, "")
+        } else {
+            std::fs::create_dir_all(&src)
+        };
         made.map_err(|e| e.to_string())?;
     }
     symlink(&src, &link).map_err(|e| e.to_string())
@@ -165,7 +191,10 @@ fn symlink(src: &Path, link: &Path) -> std::io::Result<()> {
 }
 
 fn manual_alias(name: &str) -> Option<usize> {
-    zshrc::parse(&std::fs::read_to_string(zshrc_path()).unwrap_or_default()).manual.get(name).copied()
+    zshrc::parse(&std::fs::read_to_string(zshrc_path()).unwrap_or_default())
+        .manual
+        .get(name)
+        .copied()
 }
 
 /// Adds or removes `claude-<name>` in our `~/.zshrc` block, after a snapshot of the file.
@@ -176,7 +205,12 @@ pub fn set_alias(config_dir: &Path, on: bool) -> Result<(), String> {
     if cfg!(windows) {
         return Err("Les alias shell (~/.zshrc) ne sont pas disponibles sous Windows.".into());
     }
-    let name = config_dir.file_name().unwrap_or_default().to_string_lossy().trim_start_matches(".claude-").to_string();
+    let name = config_dir
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .trim_start_matches(".claude-")
+        .to_string();
     let path = zshrc_path();
     let text = std::fs::read_to_string(&path).unwrap_or_default();
     let aliases = zshrc::parse(&text);
@@ -202,7 +236,13 @@ pub fn projects(config_dir: PathBuf) -> Vec<PathBuf> {
     let ctx = ScanContext { config_dir, project: None };
     let text = std::fs::read_to_string(ctx.claude_json()).unwrap_or_default();
     let v: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
-    let mut out: Vec<PathBuf> = v["projects"].as_object().into_iter().flatten().map(|(k, _)| PathBuf::from(k)).filter(|p| p.is_dir()).collect();
+    let mut out: Vec<PathBuf> = v["projects"]
+        .as_object()
+        .into_iter()
+        .flatten()
+        .map(|(k, _)| PathBuf::from(k))
+        .filter(|p| p.is_dir())
+        .collect();
     out.sort();
     out
 }

@@ -60,7 +60,10 @@ impl ScanContext {
 
 /// `$HOME`, or `%USERPROFILE%` on Windows (where Claude Code keeps `.claude` too).
 pub fn home() -> PathBuf {
-    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_default()
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .unwrap_or_default()
 }
 
 /// Collects nodes and scan-time issues (unreadable files, invalid skills).
@@ -88,7 +91,12 @@ impl Scan<'_> {
     }
 
     pub fn issue(&mut self, rule: &'static str, severity: Severity, node: &str, message: String) {
-        self.issues.push(Issue { rule, severity, nodes: vec![node.to_string()], message });
+        self.issues.push(Issue {
+            rule,
+            severity,
+            nodes: vec![node.to_string()],
+            message,
+        });
     }
 
     /// `Ok(None)` when the file doesn't exist; a parse error becomes an issue on a config node.
@@ -107,7 +115,11 @@ impl Scan<'_> {
 }
 
 pub fn scan(ctx: &ScanContext) -> Graph {
-    let mut s = Scan { ctx, nodes: vec![], issues: vec![] };
+    let mut s = Scan {
+        ctx,
+        nodes: vec![],
+        issues: vec![],
+    };
     let st = settings::scan(&mut s);
     files::memory(&mut s);
     files::dir_items(&mut s, &ctx.config_dir, Scope::User, None);

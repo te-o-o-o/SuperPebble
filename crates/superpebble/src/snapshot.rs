@@ -28,7 +28,10 @@ pub fn save(files: &[&Path], reason: &str) -> std::io::Result<PathBuf> {
 pub fn write_atomic(path: &Path, content: &str) -> std::io::Result<()> {
     let target = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
     let dir = target.parent().unwrap_or(Path::new("."));
-    let tmp = dir.join(format!(".{}.superpebble-tmp", target.file_name().unwrap_or_default().to_string_lossy()));
+    let tmp = dir.join(format!(
+        ".{}.superpebble-tmp",
+        target.file_name().unwrap_or_default().to_string_lossy()
+    ));
     let mut f = std::fs::File::create(&tmp)?;
     f.write_all(content.as_bytes())?;
     f.sync_all()?;

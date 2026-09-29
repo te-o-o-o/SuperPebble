@@ -18,7 +18,9 @@ pub struct Aliases {
 fn alias_name(line: &str) -> Option<&str> {
     let l = line.trim_start();
     let l = l.strip_prefix("alias ").unwrap_or(l).strip_prefix("claude-")?;
-    let end = l.find(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')).unwrap_or(l.len());
+    let end = l
+        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+        .unwrap_or(l.len());
     let rest = l[end..].trim_start();
     (end > 0 && (rest.starts_with('=') || rest.starts_with("()"))).then(|| &l[..end])
 }
@@ -33,7 +35,11 @@ pub fn parse(text: &str) -> Aliases {
             _ => {
                 let Some(name) = alias_name(line) else { continue };
                 if inside {
-                    let dir = line.split("CLAUDE_CONFIG_DIR=\"").nth(1).and_then(|r| r.split('"').next()).unwrap_or("");
+                    let dir = line
+                        .split("CLAUDE_CONFIG_DIR=\"")
+                        .nth(1)
+                        .and_then(|r| r.split('"').next())
+                        .unwrap_or("");
                     out.managed.insert(name.to_string(), dir.to_string());
                 } else {
                     out.manual.entry(name.to_string()).or_insert(i + 1);

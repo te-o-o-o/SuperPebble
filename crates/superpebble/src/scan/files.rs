@@ -14,7 +14,12 @@ pub fn dir_items(s: &mut Scan, dir: &Path, scope: Scope, parent: Option<&str>) {
             // A top-level skill folder with no SKILL.md anywhere below.
             let id = s.push(Kind::Skill, scope, &sub, &file_name(&sub)).id.clone();
             set_parent(s, parent);
-            s.issue("invalid-skill", Severity::Error, &id, format!("Skill invalide : {} (SKILL.md absent)", file_name(&sub)));
+            s.issue(
+                "invalid-skill",
+                Severity::Error,
+                &id,
+                format!("Skill invalide : {} (SKILL.md absent)", file_name(&sub)),
+            );
         }
     }
     for (kind, sub) in [(Kind::Agent, "agents"), (Kind::Command, "commands")] {
@@ -65,7 +70,10 @@ fn set_parent(s: &mut Scan, parent: Option<&str>) {
 
 /// Raw frontmatter text and its parsed value.
 fn frontmatter(text: &str) -> (Option<String>, Result<Value, String>) {
-    let Some(rest) = text.strip_prefix("---").and_then(|r| r.strip_prefix('\n').or(r.strip_prefix("\r\n"))) else {
+    let Some(rest) = text
+        .strip_prefix("---")
+        .and_then(|r| r.strip_prefix('\n').or(r.strip_prefix("\r\n")))
+    else {
         return (None, Err("frontmatter absent".into()));
     };
     let Some(end) = rest.find("\n---") else {
