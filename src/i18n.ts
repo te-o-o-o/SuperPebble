@@ -48,7 +48,7 @@ const FR: Record<string, string> = {
   // theme
   "Config": "Conf",
   "MCP servers": "Serveurs MCP",
-  "Agents & commands": "Agents & commandes",
+  "Skills & commands": "Skills & commandes",
   "Config files": "Fichiers de conf",
   "project": "projet",
   "MCP server": "Serveur MCP",
