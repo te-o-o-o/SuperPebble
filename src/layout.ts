@@ -41,10 +41,12 @@ function column(origin: { x: number; y: number }, angle: number, count: number, 
   const [dx, dy] = [Math.cos(a), Math.sin(a)];
   const step = 50 + (maxW - 30) * Math.abs(dy); // items side by side need their width, stacked ones their height
   const colStep = 220 * Math.abs(dx) + 56 * Math.abs(dy);
+  // Side by side, six pills sprawl over a thousand pixels: stack more, shorter rows instead.
+  const per = Math.abs(dy) > 0.7 ? 3 : PER_COLUMN;
   return Array.from({ length: count }, (_, i) => {
-    const col = Math.floor(i / PER_COLUMN);
-    const inCol = Math.min(PER_COLUMN, count - col * PER_COLUMN);
-    const t = (i % PER_COLUMN - (inCol - 1) / 2) * step;
+    const col = Math.floor(i / per);
+    const inCol = Math.min(per, count - col * per);
+    const t = (i % per - (inCol - 1) / 2) * step;
     const dist = ITEM_DIST + col * colStep - Math.abs(t) * 0.12;
     return { x: origin.x + dx * dist - dy * t, y: origin.y + dy * dist + dx * t };
   });
