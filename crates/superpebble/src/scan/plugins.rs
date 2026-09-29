@@ -21,7 +21,9 @@ pub fn scan(s: &mut Scan, st: &Settings) {
             if scope != Scope::User && inst["projectPath"].as_str() != project.as_deref() {
                 continue;
             }
-            let Some(root) = inst["installPath"].as_str().map(PathBuf::from) else { continue };
+            let Some(root) = inst["installPath"].as_str().map(PathBuf::from) else {
+                continue;
+            };
             plugin(s, id, inst, &root, scope, st.enabled_plugins.get(id) == Some(&true));
         }
     }

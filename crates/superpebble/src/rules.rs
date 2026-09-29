@@ -9,21 +9,38 @@ use std::sync::OnceLock;
 pub fn check(nodes: &[Node]) -> Vec<Issue> {
     let mut out = vec![];
     for n in nodes.iter().filter(|n| n.enabled) {
-        let issue = |rule, severity, message| Issue { rule, severity, nodes: vec![n.id.clone()], message };
+        let issue = |rule, severity, message| Issue {
+            rule,
+            severity,
+            nodes: vec![n.id.clone()],
+            message,
+        };
         match n.kind {
             Kind::Mcp => {
                 if let Some(cmd) = n.meta["command"].as_str() {
                     if !found(&expand(cmd, n)) {
-                        out.push(issue("orphan-mcp", Severity::Error, format!("MCP orphelin : {} (commande introuvable)", n.name)));
+                        out.push(issue(
+                            "orphan-mcp",
+                            Severity::Error,
+                            format!("MCP orphelin : {} (commande introuvable)", n.name),
+                        ));
                     }
                 }
                 for key in n.meta["plaintext_secrets"].as_array().into_iter().flatten() {
-                    out.push(issue("plaintext-secret", Severity::Warning, format!("Secret en clair : {} ({})", key.as_str().unwrap_or(""), n.name)));
+                    out.push(issue(
+                        "plaintext-secret",
+                        Severity::Warning,
+                        format!("Secret en clair : {} ({})", key.as_str().unwrap_or(""), n.name),
+                    ));
                 }
             }
             Kind::Hook => {
                 if let Some(missing) = n.meta["command"].as_str().and_then(|c| missing_in_command(c, n)) {
-                    out.push(issue("broken-hook", Severity::Error, format!("Hook cassé : {} ({missing} introuvable)", n.name)));
+                    out.push(issue(
+                        "broken-hook",
+                        Severity::Error,
+                        format!("Hook cassé : {} ({missing} introuvable)", n.name),
+                    ));
                 }
             }
             _ => {}
@@ -94,7 +111,9 @@ fn found(cmd: &str) -> bool {
     // Windows resolves `npx` to `npx.cmd` etc. through PATHEXT.
     let exts: Vec<String> = if cfg!(windows) {
         let pathext = std::env::var("PATHEXT").unwrap_or_else(|_| ".EXE;.CMD;.BAT;.COM".into());
-        std::iter::once(String::new()).chain(pathext.split(';').map(str::to_lowercase)).collect()
+        std::iter::once(String::new())
+            .chain(pathext.split(';').map(str::to_lowercase))
+            .collect()
     } else {
         vec![String::new()]
     };

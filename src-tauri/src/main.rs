@@ -107,7 +107,11 @@ fn open_path(state: State<AppState>, path: PathBuf) -> Result<(), String> {
 fn open_windows(path: &std::path::Path) -> Result<(), String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let code = Command::new("cmd").args(["/C", "code"]).arg(path).creation_flags(CREATE_NO_WINDOW).status();
+    let code = Command::new("cmd")
+        .args(["/C", "code"])
+        .arg(path)
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
     if code.is_ok_and(|s| s.success()) {
         return Ok(());
     }
@@ -122,7 +126,11 @@ fn login_shell_path() -> Option<String> {
         return None; // GUI apps get the full user PATH on Windows
     }
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
-    let out = Command::new(shell).args(["-ilc", "printf '\\n__SP__%s' \"$PATH\""]).stdin(std::process::Stdio::null()).output().ok()?;
+    let out = Command::new(shell)
+        .args(["-ilc", "printf '\\n__SP__%s' \"$PATH\""])
+        .stdin(std::process::Stdio::null())
+        .output()
+        .ok()?;
     let text = String::from_utf8_lossy(&out.stdout);
     let (_, path) = text.rsplit_once("__SP__")?;
     Some(path.trim().to_string()).filter(|p| !p.is_empty())
@@ -141,7 +149,16 @@ fn main() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![accounts, create_account, set_shared, set_alias, projects, scan, watch, open_path])
+        .invoke_handler(tauri::generate_handler![
+            accounts,
+            create_account,
+            set_shared,
+            set_alias,
+            projects,
+            scan,
+            watch,
+            open_path
+        ])
         .run(tauri::generate_context!())
         .expect("failed to start SuperPebble");
 }

@@ -12,7 +12,12 @@ pub fn scan(s: &mut Scan, st: &Settings) {
 
     let Some(project) = s.ctx.project.clone() else { return };
     let local = &cj["projects"][project.to_string_lossy().as_ref()];
-    let disabled: HashSet<&str> = local["disabledMcpServers"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+    let disabled: HashSet<&str> = local["disabledMcpServers"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect();
     let before = s.nodes.len();
     servers(s, local.get("mcpServers"), Scope::Local, &cj_path, None);
 
@@ -20,7 +25,12 @@ pub fn scan(s: &mut Scan, st: &Settings) {
     if let Some(v) = s.read_json(&mcp_json, Scope::Project) {
         servers(s, v.get("mcpServers"), Scope::Project, &mcp_json, None);
     }
-    let rejected: HashSet<&str> = local["disabledMcpjsonServers"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+    let rejected: HashSet<&str> = local["disabledMcpjsonServers"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect();
     for n in &mut s.nodes[before..] {
         let off = disabled.contains(n.name.as_str())
             || (n.scope == Scope::Project && (rejected.contains(n.name.as_str()) || st.disabled_mcpjson.contains(&n.name)));
@@ -41,7 +51,13 @@ pub fn servers(s: &mut Scan, map: Option<&Value>, scope: Scope, source: &Path, p
         let env = cfg.get("env").and_then(Value::as_object);
         let headers = cfg.get("headers").and_then(Value::as_object);
         let keys = |m: Option<&serde_json::Map<String, Value>>| m.map(|m| m.keys().cloned().collect::<Vec<_>>()).unwrap_or_default();
-        let secrets: Vec<&String> = env.into_iter().chain(headers).flatten().filter(|(k, v)| is_plaintext_secret(k, v)).map(|(k, _)| k).collect();
+        let secrets: Vec<&String> = env
+            .into_iter()
+            .chain(headers)
+            .flatten()
+            .filter(|(k, v)| is_plaintext_secret(k, v))
+            .map(|(k, _)| k)
+            .collect();
 
         let n = s.push(Kind::Mcp, scope, source, name);
         n.meta = json!({
@@ -62,7 +78,9 @@ pub fn servers(s: &mut Scan, map: Option<&Value>, scope: Scope, source: &Path, p
 
 fn is_plaintext_secret(key: &str, value: &Value) -> bool {
     let k = key.to_ascii_uppercase();
-    let looks_secret = ["_TOKEN", "_KEY", "_SECRET", "PASSWORD"].iter().any(|s| k.ends_with(s) || k.contains(s))
+    let looks_secret = ["_TOKEN", "_KEY", "_SECRET", "PASSWORD"]
+        .iter()
+        .any(|s| k.ends_with(s) || k.contains(s))
         || k == "AUTHORIZATION"
         || k == "X-API-KEY";
     // `${VAR}` is a reference resolved at launch, not a secret on disk.
