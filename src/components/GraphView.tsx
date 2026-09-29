@@ -30,6 +30,7 @@ export function GraphView({ graph, hidden, expanded, selected, scope, onSelect, 
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
     const d = node.data as PebbleData;
+    if (d.variant === "center") return onSelect(null);
     if (d.variant === "more") return onToggle(d.target);
     if (d.variant === "group") return onSelect(node.id);
     if (d.variant === "item") {
