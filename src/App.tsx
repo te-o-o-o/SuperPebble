@@ -9,8 +9,9 @@ import { GraphView } from "./components/GraphView";
 import { IssueBar } from "./components/IssueBar";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
+import { TransferDialog } from "./components/TransferDialog";
 import type { GroupKey } from "./theme";
-import type { Account, Graph, Scope } from "./types";
+import type { Account, Graph, PNode, Scope } from "./types";
 
 const toggled = <T,>(set: Set<T>, v: T) => {
   const next = new Set(set);
@@ -30,6 +31,7 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null);
   const [scope, setScope] = useState<Scope | null>(null);
   const [accountsOpen, setAccountsOpen] = useState(false);
+  const [moving, setMoving] = useState<PNode | null>(null);
 
   useEffect(() => {
     api.accounts().then((a) => {
@@ -69,6 +71,7 @@ export default function App() {
   }, [rescan, account, project]);
 
   const node = graph?.nodes.find((n) => n.id === selected);
+  const readOnly = accounts.find((a) => a.config_dir === account)?.wsl;
 
   return (
     <div className="app">
@@ -112,9 +115,10 @@ export default function App() {
         (selected?.startsWith("group:") ? (
           <BranchPanel graph={graph} group={selected.slice(6) as GroupKey} onSelect={setSelected} />
         ) : (
-          <DetailPanel graph={graph} node={node} onOpen={api.openPath} onSelect={setSelected} />
+          <DetailPanel graph={graph} node={node} onOpen={api.openPath} onSelect={setSelected} onMove={readOnly ? undefined : setMoving} />
         ))}
       <AccountsDialog open={accountsOpen} accounts={accounts} onClose={() => setAccountsOpen(false)} onChange={setAccounts} />
+      <TransferDialog node={moving} accounts={accounts} account={account} project={project} onClose={() => setMoving(null)} onDone={rescan} />
       <IssueBar issues={graph?.issues ?? []} onSelect={setSelected} />
     </div>
   );

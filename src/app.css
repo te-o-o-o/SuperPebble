@@ -34,7 +34,6 @@ button, select {
 button:hover:not(:disabled) { border-color: var(--muted); }
 button:disabled { opacity: 0.45; cursor: default; }
 button.primary { background: var(--text); color: var(--bg); font-weight: 600; border-color: var(--text); }
-button.danger { color: var(--error); border-color: color-mix(in srgb, var(--error) 50%, transparent); }
 
 .app {
   display: grid;
