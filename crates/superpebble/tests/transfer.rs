@@ -83,6 +83,36 @@ fn moves_and_copies_across_scopes_and_accounts() {
     .unwrap();
     assert!(home.join(".claude/skills/review/SKILL.md").is_file());
 
+    // Plugin: user → project moves the install entry and `enabledPlugins`; a copy to local adds an entry.
+    let install = json!({ "scope": "user", "installPath": work.join("plugins/cache/p"), "version": "1" });
+    let registry = work.join("plugins/installed_plugins.json");
+    fs::create_dir_all(registry.parent().unwrap()).unwrap();
+    fs::write(&registry, json!({ "version": 2, "plugins": { "p@m": [install] } }).to_string()).unwrap();
+    fs::write(work.join("settings.json"), json!({ "enabledPlugins": { "p@m": true } }).to_string()).unwrap();
+    transfer(&ctx, &id(&ctx, Kind::Plugin, "p", Scope::User), &work, Scope::Project, false).unwrap();
+    transfer(&ctx, &id(&ctx, Kind::Plugin, "p", Scope::Project), &work, Scope::Local, true).unwrap();
+    let installs = &read(&registry)["plugins"]["p@m"];
+    let scopes: Vec<_> = installs
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| (&i["scope"], &i["projectPath"]))
+        .collect();
+    let p = json!(project.to_str().unwrap());
+    assert_eq!(scopes, [(&json!("project"), &p), (&json!("local"), &p)]);
+    assert_eq!(read(&work.join("settings.json")), json!({ "enabledPlugins": {} }));
+    assert_eq!(read(&project.join(".claude/settings.json"))["enabledPlugins"]["p@m"], true);
+    assert_eq!(read(&project.join(".claude/settings.local.json"))["enabledPlugins"]["p@m"], true);
+    let err = transfer(
+        &ctx,
+        &id(&ctx, Kind::Plugin, "p", Scope::Local),
+        &home.join(".claude"),
+        Scope::User,
+        true,
+    )
+    .unwrap_err();
+    assert!(err.contains("only from and to the user scope"), "{err}");
+
     assert!(
         home.join(".superpebble/snapshots").read_dir().unwrap().count() >= 4,
         "one snapshot per JSON edit"

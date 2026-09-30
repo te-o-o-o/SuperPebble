@@ -1,6 +1,9 @@
 //! Moves or copies one element to another account and/or scope.
 //! Skills, agents and commands are files: renamed, or copied then deleted across disks.
 //! MCP servers and hooks are JSON entries: removed and re-added, after a snapshot of every file touched.
+//! Plugins: see `plugin`.
+
+mod plugin;
 
 use crate::model::{Kind, Node, Scope};
 use crate::scan::{scan, ScanContext};
@@ -10,9 +13,9 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const NO_SCOPE: &str = "This element has no such scope.";
-const GONE: &str = "Element not found: rescan and retry.";
-const SHAPE: &str = "Unexpected JSON shape, left untouched.";
+pub(super) const NO_SCOPE: &str = "This element has no such scope.";
+pub(super) const GONE: &str = "Element not found: rescan and retry.";
+pub(super) const SHAPE: &str = "Unexpected JSON shape, left untouched.";
 
 /// `id` is a node of the scan of `from`; project scopes stay on `from`'s project.
 pub fn transfer(from: &ScanContext, id: &str, to_config_dir: &Path, to: Scope, copy: bool) -> Result<(), String> {
@@ -32,6 +35,7 @@ pub fn transfer(from: &ScanContext, id: &str, to_config_dir: &Path, to: Scope, c
         Kind::Skill | Kind::Agent | Kind::Command => file(n, from, &dest, to, copy),
         Kind::Mcp => mcp(n, from, &dest, to, copy),
         Kind::Hook => hook(n, &dest, to, copy),
+        Kind::Plugin => plugin::transfer(n, from, &dest, to, copy),
         _ => Err("This element cannot be moved yet.".into()),
     }
 }
@@ -123,7 +127,7 @@ fn mcp(n: &Node, from: &ScanContext, dest: &ScanContext, to: Scope, copy: bool) 
     files.save(&format!("move mcp {}", n.name))
 }
 
-fn settings_file(ctx: &ScanContext, scope: Scope) -> Result<PathBuf, String> {
+pub(super) fn settings_file(ctx: &ScanContext, scope: Scope) -> Result<PathBuf, String> {
     match (scope, &ctx.project) {
         (Scope::User, _) => Ok(ctx.config_dir.join("settings.json")),
         (Scope::Project, Some(p)) => Ok(p.join(".claude/settings.json")),
@@ -184,11 +188,11 @@ fn hook(n: &Node, dest: &ScanContext, to: Scope, copy: bool) -> Result<(), Strin
 /// JSON files edited together: one read, one snapshot and one write each, even when the
 /// source and the target are the same file.
 #[derive(Default)]
-struct Files(BTreeMap<PathBuf, Value>);
+pub(super) struct Files(BTreeMap<PathBuf, Value>);
 
 impl Files {
     /// A missing file starts empty; an unreadable one stops everything.
-    fn get(&mut self, p: &Path) -> Result<&mut Value, String> {
+    pub(super) fn get(&mut self, p: &Path) -> Result<&mut Value, String> {
         if !self.0.contains_key(p) {
             let v = match fs::read_to_string(p) {
                 Ok(text) => serde_json::from_str(&text).map_err(|e| format!("{}: {e}", p.display()))?,
@@ -200,7 +204,7 @@ impl Files {
         Ok(self.0.get_mut(p).expect("inserted above"))
     }
 
-    fn save(self, reason: &str) -> Result<(), String> {
+    pub(super) fn save(self, reason: &str) -> Result<(), String> {
         let paths: Vec<&Path> = self.0.keys().map(PathBuf::as_path).collect();
         snapshot::save(&paths, reason).map_err(|e| e.to_string())?;
         for (p, v) in &self.0 {
@@ -213,7 +217,7 @@ impl Files {
 }
 
 /// The object at `path`, created when missing. Never replaces a value of another type.
-fn obj<'a>(v: &'a mut Value, path: &[String]) -> Result<&'a mut Map<String, Value>, String> {
+pub(super) fn obj<'a>(v: &'a mut Value, path: &[String]) -> Result<&'a mut Map<String, Value>, String> {
     let mut v = v;
     for k in path {
         v = v.as_object_mut().ok_or(SHAPE)?.entry(k.as_str()).or_insert_with(|| json!({}));

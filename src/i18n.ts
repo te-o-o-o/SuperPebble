@@ -116,6 +116,9 @@ const FR: Record<string, string> = {
   "Element not found: rescan and retry.": "Élément introuvable : rescanne et réessaie.",
   "Unexpected JSON shape, left untouched.": "Structure JSON inattendue, rien n'a été modifié.",
   "Already there.": "Il y est déjà.",
+  "Claude Code installs it on that account itself: this needs the network.": "Claude Code l'installe lui-même sur ce compte : il faut le réseau.",
+  "A plugin changes account only from and to the user scope.": "Un plugin ne change de compte que du scope user vers le scope user.",
+  "Unknown marketplace source.": "Source de marketplace inconnue.",
   "This hook already exists there.": "Ce hook existe déjà à cet endroit.",
   // issue bar
   "1 issue to review": "1 point à revoir",

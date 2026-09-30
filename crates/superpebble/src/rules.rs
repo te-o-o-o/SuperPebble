@@ -87,6 +87,10 @@ pub fn set_search_path(path: String) {
     let _ = SEARCH_PATH.set(path);
 }
 
+pub(crate) fn search_path() -> Option<&'static String> {
+    SEARCH_PATH.get()
+}
+
 /// Is `cmd` an existing path, or a file somewhere in the search path?
 fn found(cmd: &str, ctx: &ScanContext) -> bool {
     if cmd.contains('/') || cmd.contains('\\') {
