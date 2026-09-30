@@ -12,6 +12,7 @@ const TARGETS: Partial<Record<Kind, Scope[]>> = {
   command: ["user", "project"],
   mcp: ["user", "local", "project"],
   hook: ["user", "project", "local"],
+  plugin: ["user", "project", "local"],
 };
 
 export const movable = (n: PNode) => !!TARGETS[n.kind] && !n.parent && n.scope !== "managed";
@@ -44,9 +45,12 @@ export function TransferDialog({ node, accounts, account, project, onClose, onDo
   }, [node, account]);
 
   if (!node) return <dialog ref={ref} className="accounts" />;
-  const scopes = (TARGETS[node.kind] ?? []).filter((s) => s === "user" || project);
+  // A plugin changes account only from and to the user scope: project installs belong to the project.
+  const plugin = node.kind === "plugin";
+  const otherAccount = to !== account;
+  const scopes: Scope[] = plugin && otherAccount ? ["user"] : (TARGETS[node.kind] ?? []).filter((s) => s === "user" || project);
   const secret = node.kind === "mcp" && node.meta.plaintext_secrets?.length > 0 && scope === "project";
-  const ready = scope && !(to === account && scope === node.scope) && (!secret || confirmed);
+  const ready = scope && scopes.includes(scope) && !(!otherAccount && scope === node.scope) && (!secret || confirmed);
 
   const submit = () =>
     api.transfer(account, project, node.id, to, scope!, copy).then(
@@ -70,7 +74,7 @@ export function TransferDialog({ node, accounts, account, project, onClose, onDo
         <div className="row">
           <span className="muted small label">{t("Account")}</span>
           <label className="select">
-            <select value={to} onChange={(e) => setTo(e.target.value)}>
+            <select value={to} disabled={plugin && node.scope !== "user"} onChange={(e) => setTo(e.target.value)}>
               {accounts.filter((a) => !a.wsl).map((a) => (
                 <option key={a.config_dir} value={a.config_dir}>
                   {a.name}
@@ -96,7 +100,8 @@ export function TransferDialog({ node, accounts, account, project, onClose, onDo
             {t("Copy")}
           </button>
         </div>
-        {(node.kind === "mcp" || node.kind === "hook") && (
+        {plugin && otherAccount && <p className="muted small">{t("Claude Code installs it on that account itself: this needs the network.")}</p>}
+        {(node.kind === "mcp" || node.kind === "hook" || plugin) && (
           <p className="muted small">{t("Close your Claude Code sessions first: they rewrite these files too.")}</p>
         )}
         {secret && (
