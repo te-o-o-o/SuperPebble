@@ -29,12 +29,14 @@ const ITEM_DIST = 190;
 /** Items shown per collapsed group, the rest behind "+N more". */
 const COLLAPSED_MAX = 5;
 const PER_COLUMN = 6;
+/** Minimum space kept between two pebbles. */
+const GAP = 8;
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * Deterministic radial layout: groups on a ring around Claude Code, items stacked in columns
- * perpendicular to their branch. No collision solver, fine up to a few hundred nodes.
+ * perpendicular to their branch. Neighbouring branches can still meet: see `fan`.
  */
 function column(origin: { x: number; y: number }, angle: number, count: number, maxW = 180) {
   const a = rad(angle);
@@ -90,15 +92,24 @@ export function layout(graph: Graph, hidden: Set<GroupKey>, expanded: Set<string
     };
   };
 
-  /** Places pebbles in columns off `origin` and links them to `from`. Returns their positions. */
+  const overlaps = (p: { x: number; y: number }, d: PebbleData) =>
+    nodes.some((o) => Math.abs(o.position.x - p.x) < (o.data.w + d.w) / 2 + GAP && Math.abs(o.position.y - p.y) < (o.data.h + d.h) / 2 + GAP);
+
+  /**
+   * Places pebbles in columns off `origin` and links them to `from`. Returns their positions.
+   * A pebble landing on one already placed slides outward along its branch until it's free.
+   */
+  // ponytail: checks every placed pebble, O(n²); a spatial grid if graphs reach thousands of pebbles.
   const fan = (datas: PebbleData[], origin: { x: number; y: number }, angle: number, from: string) => {
-    const slots = column(origin, angle, datas.length, Math.max(0, ...datas.map((d) => d.w)));
-    datas.forEach((d, i) => {
+    const [dx, dy] = [Math.cos(rad(angle)), Math.sin(rad(angle))];
+    return column(origin, angle, datas.length, Math.max(0, ...datas.map((d) => d.w))).map((p, i) => {
+      const d = datas[i];
+      while (overlaps(p, d)) p = { x: p.x + dx * 12, y: p.y + dy * 12 };
       const id = d.variant === "more" ? `more:${d.target}` : d.target;
-      nodes.push(pebble(id, slots[i], d));
+      nodes.push(pebble(id, p, d));
       edges.push(edge(from, id, d.color, d.dashed));
+      return p;
     });
-    return slots;
   };
 
   for (const g of GROUPS) {
