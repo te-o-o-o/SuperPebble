@@ -5,6 +5,7 @@ import { t } from "./i18n";
 import { AccountsDialog } from "./components/AccountsDialog";
 import { BranchPanel } from "./components/BranchPanel";
 import { BudgetPanel } from "./components/BudgetPanel";
+import { CleanupDialog, SnapshotsDialog } from "./components/CleanupDialogs";
 import { DetailPanel } from "./components/DetailPanel";
 import { GraphView } from "./components/GraphView";
 import { IssueBar } from "./components/IssueBar";
@@ -33,6 +34,7 @@ export default function App() {
   const [scope, setScope] = useState<Scope | null>(null);
   const [accountsOpen, setAccountsOpen] = useState(false);
   const [moving, setMoving] = useState<PNode | null>(null);
+  const [dialog, setDialog] = useState<"cleanup" | "snapshots" | null>(null);
 
   useEffect(() => {
     api.accounts().then((a) => {
@@ -73,6 +75,10 @@ export default function App() {
 
   const node = graph?.nodes.find((n) => n.id === selected);
   const readOnly = accounts.find((a) => a.config_dir === account)?.wsl;
+  // Plugins toggle in their settings; MCP servers per project, in .claude.json. Mirrors crates/superpebble/src/edit.rs.
+  const switchable =
+    !readOnly && node && !node.parent && node.scope !== "managed" && (node.kind === "plugin" || (node.kind === "mcp" && !!project));
+  const onEnable = switchable ? (on: boolean) => api.setEnabled(account, project, node.id, on) : undefined;
 
   return (
     <div className="app">
@@ -85,6 +91,7 @@ export default function App() {
         onProject={setProject}
         scannedAt={graph?.scanned_at}
         onRescan={rescan}
+        onSnapshots={readOnly ? undefined : () => setDialog("snapshots")}
       />
       <Sidebar
         graph={graph}
@@ -118,11 +125,13 @@ export default function App() {
         ) : selected?.startsWith("group:") ? (
           <BranchPanel graph={graph} group={selected.slice(6) as GroupKey} onSelect={setSelected} />
         ) : (
-          <DetailPanel graph={graph} node={node} onOpen={api.openPath} onSelect={setSelected} onMove={readOnly ? undefined : setMoving} />
+          <DetailPanel graph={graph} node={node} onOpen={api.openPath} onSelect={setSelected} onMove={readOnly ? undefined : setMoving} onEnable={onEnable} />
         ))}
       <AccountsDialog open={accountsOpen} accounts={accounts} onClose={() => setAccountsOpen(false)} onChange={setAccounts} />
       <TransferDialog node={moving} accounts={accounts} account={account} project={project} onClose={() => setMoving(null)} onDone={rescan} />
-      <IssueBar issues={graph?.issues ?? []} onSelect={setSelected} />
+      <CleanupDialog open={dialog === "cleanup"} graph={graph} account={account} project={project} onClose={() => setDialog(null)} onDone={rescan} />
+      <SnapshotsDialog open={dialog === "snapshots"} account={account} project={project} onClose={() => setDialog(null)} onDone={rescan} />
+      <IssueBar issues={graph?.issues ?? []} onSelect={setSelected} onCleanup={readOnly ? undefined : () => setDialog("cleanup")} />
     </div>
   );
 }

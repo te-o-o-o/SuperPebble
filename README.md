@@ -34,7 +34,9 @@ pebble per item, one branch per kind, one badge per scope.
   so you see where a skill or server really comes from.
 - **Doctor**: flags orphan MCP servers (command not found), broken hooks
   (missing script), secrets in plain text, duplicates across scopes, invalid
-  skills and unreadable JSON.
+  skills and unreadable JSON. **Clean up** removes the orphans and broken hooks.
+- **Undo anything**: every change is snapshotted first, and **Snapshot** puts
+  any earlier state back. Plugins and MCP servers can also be switched off.
 - **Context budget**: a rough estimate (chars/4) of what Claude Code loads at
   startup. Click the Claude Code pebble, or run `superpebble weight`, for the
   total by category and the heaviest files.

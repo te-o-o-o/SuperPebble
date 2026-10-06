@@ -22,6 +22,13 @@ export interface Issue {
   nodes: string[];
   args: string[];
   message: string;
+  fix: boolean;
+}
+
+export interface Snapshot {
+  id: string;
+  reason: string;
+  files: string[];
 }
 
 export interface Graph {

@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod edit;
 pub mod model;
 pub mod rules;
 pub mod scan;

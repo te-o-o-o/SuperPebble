@@ -13,8 +13,8 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub(super) const NO_SCOPE: &str = "This element has no such scope.";
-pub(super) const GONE: &str = "Element not found: rescan and retry.";
+pub(crate) const NO_SCOPE: &str = "This element has no such scope.";
+pub(crate) const GONE: &str = "Element not found: rescan and retry.";
 pub(super) const SHAPE: &str = "Unexpected JSON shape, left untouched.";
 
 /// `id` is a node of the scan of `from`; project scopes stay on `from`'s project.
@@ -107,18 +107,12 @@ fn mcp_slot(ctx: &ScanContext, scope: Scope) -> Result<(PathBuf, Vec<String>), S
 }
 
 fn mcp(n: &Node, from: &ScanContext, dest: &ScanContext, to: Scope, copy: bool) -> Result<(), String> {
-    let (src, src_at) = mcp_slot(from, n.scope)?;
     let (dst, dst_at) = mcp_slot(dest, to)?;
-    if (&src, &src_at) == (&dst, &dst_at) {
+    if mcp_slot(from, n.scope)? == (dst.clone(), dst_at.clone()) {
         return Err("Already there.".into());
     }
     let mut files = Files::default();
-    let servers = obj(files.get(&src)?, &src_at)?;
-    let cfg = match copy {
-        true => servers.get(&n.name).cloned(),
-        false => servers.shift_remove(&n.name),
-    }
-    .ok_or(GONE)?;
+    let cfg = take_mcp(&mut files, n, from, copy)?;
     let target = obj(files.get(&dst)?, &dst_at)?;
     if target.contains_key(&n.name) {
         return Err(format!("{} already exists there.", n.name));
@@ -127,7 +121,18 @@ fn mcp(n: &Node, from: &ScanContext, dest: &ScanContext, to: Scope, copy: bool) 
     files.save(&format!("move mcp {}", n.name))
 }
 
-pub(super) fn settings_file(ctx: &ScanContext, scope: Scope) -> Result<PathBuf, String> {
+/// The server's config, removed from its file unless `copy`.
+pub(crate) fn take_mcp(files: &mut Files, n: &Node, ctx: &ScanContext, copy: bool) -> Result<Value, String> {
+    let (src, at) = mcp_slot(ctx, n.scope)?;
+    let servers = obj(files.get(&src)?, &at)?;
+    match copy {
+        true => servers.get(&n.name).cloned(),
+        false => servers.shift_remove(&n.name),
+    }
+    .ok_or_else(|| GONE.into())
+}
+
+pub(crate) fn settings_file(ctx: &ScanContext, scope: Scope) -> Result<PathBuf, String> {
     match (scope, &ctx.project) {
         (Scope::User, _) => Ok(ctx.config_dir.join("settings.json")),
         (Scope::Project, Some(p)) => Ok(p.join(".claude/settings.json")),
@@ -141,29 +146,11 @@ fn hook(n: &Node, dest: &ScanContext, to: Scope, copy: bool) -> Result<(), Strin
     if dst == n.source {
         return Err("Already there.".into());
     }
-    let event = n.meta["event"].as_str().ok_or(GONE)?;
-    let [i, j] = [0, 1].map(|k| n.meta["index"][k].as_u64().unwrap_or(u64::MAX) as usize);
     let mut files = Files::default();
-
-    let hooks = obj(files.get(&n.source)?, &["hooks".into()])?;
-    let groups = hooks.get_mut(event).and_then(Value::as_array_mut).ok_or(GONE)?;
-    let group = groups.get_mut(i).ok_or(GONE)?;
-    let matcher = group.get("matcher").cloned();
-    let entries = group["hooks"].as_array_mut().filter(|e| j < e.len()).ok_or(GONE)?;
-    let h = match copy {
-        true => entries[j].clone(),
-        false => entries.remove(j),
-    };
-    // Leave no empty group or event behind.
-    if entries.is_empty() {
-        groups.remove(i);
-    }
-    if groups.is_empty() {
-        hooks.shift_remove(event);
-    }
+    let (event, matcher, h) = take_hook(&mut files, n, copy)?;
 
     let groups = obj(files.get(&dst)?, &["hooks".into()])?
-        .entry(event)
+        .entry(&event)
         .or_insert_with(|| json!([]))
         .as_array_mut()
         .ok_or(SHAPE)?;
@@ -185,14 +172,38 @@ fn hook(n: &Node, dest: &ScanContext, to: Scope, copy: bool) -> Result<(), Strin
     files.save(&format!("move hook {event}"))
 }
 
+/// The hook's event, matcher and entry, removed from its file unless `copy`. Removing several
+/// hooks of one file must go from the last index to the first: indexes shift.
+pub(crate) fn take_hook(files: &mut Files, n: &Node, copy: bool) -> Result<(String, Option<Value>, Value), String> {
+    let event = n.meta["event"].as_str().ok_or(GONE)?;
+    let [i, j] = [0, 1].map(|k| n.meta["index"][k].as_u64().unwrap_or(u64::MAX) as usize);
+    let hooks = obj(files.get(&n.source)?, &["hooks".into()])?;
+    let groups = hooks.get_mut(event).and_then(Value::as_array_mut).ok_or(GONE)?;
+    let group = groups.get_mut(i).ok_or(GONE)?;
+    let matcher = group.get("matcher").cloned();
+    let entries = group["hooks"].as_array_mut().filter(|e| j < e.len()).ok_or(GONE)?;
+    let h = match copy {
+        true => entries[j].clone(),
+        false => entries.remove(j),
+    };
+    // Leave no empty group or event behind.
+    if entries.is_empty() {
+        groups.remove(i);
+    }
+    if groups.is_empty() {
+        hooks.shift_remove(event);
+    }
+    Ok((event.to_string(), matcher, h))
+}
+
 /// JSON files edited together: one read, one snapshot and one write each, even when the
 /// source and the target are the same file.
 #[derive(Default)]
-pub(super) struct Files(BTreeMap<PathBuf, Value>);
+pub(crate) struct Files(BTreeMap<PathBuf, Value>);
 
 impl Files {
     /// A missing file starts empty; an unreadable one stops everything.
-    pub(super) fn get(&mut self, p: &Path) -> Result<&mut Value, String> {
+    pub(crate) fn get(&mut self, p: &Path) -> Result<&mut Value, String> {
         if !self.0.contains_key(p) {
             let v = match fs::read_to_string(p) {
                 Ok(text) => serde_json::from_str(&text).map_err(|e| format!("{}: {e}", p.display()))?,
@@ -204,7 +215,7 @@ impl Files {
         Ok(self.0.get_mut(p).expect("inserted above"))
     }
 
-    pub(super) fn save(self, reason: &str) -> Result<(), String> {
+    pub(crate) fn save(self, reason: &str) -> Result<(), String> {
         let paths: Vec<&Path> = self.0.keys().map(PathBuf::as_path).collect();
         snapshot::save(&paths, reason).map_err(|e| e.to_string())?;
         for (p, v) in &self.0 {
@@ -217,7 +228,7 @@ impl Files {
 }
 
 /// The object at `path`, created when missing. Never replaces a value of another type.
-pub(super) fn obj<'a>(v: &'a mut Value, path: &[String]) -> Result<&'a mut Map<String, Value>, String> {
+pub(crate) fn obj<'a>(v: &'a mut Value, path: &[String]) -> Result<&'a mut Map<String, Value>, String> {
     let mut v = v;
     for k in path {
         v = v.as_object_mut().ok_or(SHAPE)?.entry(k.as_str()).or_insert_with(|| json!({}));

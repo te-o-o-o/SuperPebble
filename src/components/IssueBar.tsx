@@ -2,7 +2,9 @@ import { issueText, t } from "../i18n";
 import { COLORS } from "../theme";
 import type { Issue } from "../types";
 
-export function IssueBar({ issues, onSelect }: { issues: Issue[]; onSelect: (id: string) => void }) {
+type Props = { issues: Issue[]; onSelect: (id: string) => void; onCleanup?: () => void };
+
+export function IssueBar({ issues, onSelect, onCleanup }: Props) {
   return (
     <footer className="issuebar">
       <strong>{issues.length > 1 ? t("{0} issues to review", issues.length) : issues.length ? t("1 issue to review") : t("Nothing to report")}</strong>
@@ -14,7 +16,7 @@ export function IssueBar({ issues, onSelect }: { issues: Issue[]; onSelect: (id:
           </button>
         ))}
       </div>
-      <button className="primary" disabled title={t("Comes in M2")}>
+      <button className="primary" disabled={!onCleanup || !issues.some((i) => i.fix)} onClick={onCleanup}>
         {t("Clean up")}
       </button>
     </footer>

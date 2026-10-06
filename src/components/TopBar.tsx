@@ -23,6 +23,8 @@ export function TopBar(props: {
   onProject: (p: string | null) => void;
   scannedAt?: number;
   onRescan: () => void;
+  /** Absent for read-only (WSL) accounts. */
+  onSnapshots?: () => void;
 }) {
   // Re-render every 30s so "scanned X ago" stays true.
   const [, tick] = useState(0);
@@ -69,7 +71,7 @@ export function TopBar(props: {
       <button className="ghost" onClick={props.onRescan} title={t("Rescan")}>
         <svg viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" /></svg>
       </button>
-      <button className="ghost" disabled title={t("Snapshot: comes with the cleanup (M2)")}>
+      <button className="ghost" disabled={!props.onSnapshots} onClick={props.onSnapshots}>
         Snapshot
       </button>
       <label className="select" title={t("Language")}>

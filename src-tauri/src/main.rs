@@ -9,7 +9,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::time::Duration;
 use superpebble::model::{Graph, Scope};
-use superpebble::{accounts, transfer, wsl, ScanContext};
+use superpebble::{accounts, edit, snapshot, transfer, wsl, ScanContext};
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Default)]
@@ -63,6 +63,32 @@ fn transfer(
     copy: bool,
 ) -> Result<(), String> {
     transfer::transfer(&ScanContext { config_dir, project }, &id, &to_config_dir, to_scope, copy)
+}
+
+// Edits: the watcher triggers the rescan, as for `transfer`.
+#[tauri::command]
+fn set_enabled(config_dir: PathBuf, project: Option<PathBuf>, id: String, on: bool) -> Result<(), String> {
+    edit::set_enabled(&ScanContext { config_dir, project }, &id, on)
+}
+
+#[tauri::command]
+fn clean_up(config_dir: PathBuf, project: Option<PathBuf>, ids: Vec<String>) -> Result<(), String> {
+    edit::clean_up(&ScanContext { config_dir, project }, &ids)
+}
+
+#[tauri::command]
+fn snapshot_now(config_dir: PathBuf, project: Option<PathBuf>) -> Result<Vec<snapshot::Snapshot>, String> {
+    edit::snapshot_now(&ScanContext { config_dir, project }).map(|_| snapshot::list())
+}
+
+#[tauri::command]
+fn snapshots() -> Vec<snapshot::Snapshot> {
+    snapshot::list()
+}
+
+#[tauri::command]
+fn restore(id: String) -> Result<Vec<snapshot::Snapshot>, String> {
+    snapshot::restore(&id).map(|_| snapshot::list())
 }
 
 /// Replaces the previous watcher; emits `config-changed` on any write under the watched paths.
@@ -179,6 +205,11 @@ fn main() {
             projects,
             scan,
             transfer,
+            set_enabled,
+            clean_up,
+            snapshot_now,
+            snapshots,
+            restore,
             watch,
             open_path
         ])

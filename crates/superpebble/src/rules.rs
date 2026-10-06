@@ -1,6 +1,6 @@
 //! Cross-node checks. Nothing is executed: we only look for files and binaries on disk.
 
-use crate::model::{Issue, Kind, Node, Severity};
+use crate::model::{Issue, Kind, Node, Scope, Severity};
 use crate::scan::ScanContext;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -11,6 +11,11 @@ pub fn check(nodes: &[Node], ctx: &ScanContext) -> Vec<Issue> {
     for n in nodes.iter().filter(|n| n.enabled) {
         let issue =
             |rule, severity, args: &[&str]| Issue::new(rule, severity, vec![n.id.clone()], args.iter().map(|s| s.to_string()).collect());
+        // Plugin content and managed settings are not ours to remove.
+        let fix = |i: Issue| Issue {
+            fix: n.parent.is_none() && n.scope != Scope::Managed,
+            ..i
+        };
         for key in n.meta["plaintext_secrets"].as_array().into_iter().flatten() {
             out.push(issue("plaintext-secret", Severity::Warning, &[key.as_str().unwrap_or(""), &n.name]));
         }
@@ -18,13 +23,13 @@ pub fn check(nodes: &[Node], ctx: &ScanContext) -> Vec<Issue> {
             Kind::Mcp => {
                 if let Some(cmd) = n.meta["command"].as_str() {
                     if !found(&expand(cmd, n, ctx), ctx) {
-                        out.push(issue("orphan-mcp", Severity::Error, &[&n.name]));
+                        out.push(fix(issue("orphan-mcp", Severity::Error, &[&n.name])));
                     }
                 }
             }
             Kind::Hook => {
                 if let Some(missing) = n.meta["command"].as_str().and_then(|c| missing_in_command(c, n, ctx)) {
-                    out.push(issue("broken-hook", Severity::Error, &[&n.name, &missing]));
+                    out.push(fix(issue("broken-hook", Severity::Error, &[&n.name, &missing])));
                 }
             }
             _ => {}

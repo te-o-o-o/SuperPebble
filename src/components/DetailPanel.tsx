@@ -7,9 +7,18 @@ import { ItemList } from "./ItemList";
 import { ScopeBadge } from "./ScopeBadge";
 import { movable } from "./TransferDialog";
 
-type Props = { graph: Graph; node?: PNode; onOpen: (path: string) => void; onSelect: (id: string) => void; onMove?: (n: PNode) => void };
+type Props = {
+  graph: Graph;
+  node?: PNode;
+  onOpen: (path: string) => void;
+  onSelect: (id: string) => void;
+  onMove?: (n: PNode) => void;
+  /** Absent when this element has no off switch. */
+  onEnable?: (on: boolean) => Promise<void>;
+};
 
-export function DetailPanel({ graph, node, onOpen, onSelect, onMove }: Props) {
+export function DetailPanel({ graph, node, onOpen, onSelect, onMove, onEnable }: Props) {
+  const [error, setError] = useState<{ id: string; text: string }>();
   if (!node) {
     return (
       <aside className="detail empty">
@@ -88,10 +97,17 @@ export function DetailPanel({ graph, node, onOpen, onSelect, onMove }: Props) {
         </Section>
       )}
 
-      <label className="toggle" title={t("Read-only until the cleanup (M2)")}>
-        <input type="checkbox" checked={node.enabled} disabled readOnly /> {t("Enabled")}
-        <span className="muted">{t("read-only")}</span>
-      </label>
+      {onEnable && (
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={node.enabled}
+            onChange={(e) => onEnable(e.target.checked).then(() => setError(undefined), (err) => setError({ id: node.id, text: t(String(err)) }))}
+          />{" "}
+          {t("Enabled")}
+        </label>
+      )}
+      {error?.id === node.id && <p className="error">{error.text}</p>}
 
       <span className="spacer" />
       <div className="actions">

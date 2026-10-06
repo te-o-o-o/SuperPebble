@@ -48,7 +48,9 @@ Exit codes, for CI:
 exits 0 on warnings.
 
 `doctor --json` prints `{"errors": n, "warnings": n, "issues": [...]}`, each issue
-being `{"rule", "severity", "nodes", "args", "message"}`. `rule` and `severity`
+being `{"rule", "severity", "nodes", "args", "message", "fix"}`; `fix` is true when
+the app's cleanup can remove the element (an orphan MCP server or a broken hook,
+outside plugins and managed settings). `rule` and `severity`
 are stable; `message` is English text meant for humans.
 
 ## weight
