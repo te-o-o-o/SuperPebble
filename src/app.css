@@ -208,4 +208,4 @@ dialog.accounts .intro { margin: 0 0 16px; font-size: 12.5px; line-height: 1.6; 
 .account input:not([type]) { flex: 1; max-width: 220px; padding: 6px 10px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
 .account input:not([type]):focus { outline: none; border-color: var(--muted); }
 dialog .done { color: #9cc27a; font-size: 13px; }
-dialog .error { color: var(--error); font-size: 13px; }
+dialog .error, .detail > .error { color: var(--error); font-size: 13px; }

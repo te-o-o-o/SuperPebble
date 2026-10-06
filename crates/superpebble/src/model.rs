@@ -60,6 +60,8 @@ pub struct Issue {
     pub args: Vec<String>,
     /// English message, for the CLI and as a fallback.
     pub message: String,
+    /// The cleanup can fix it: remove the orphan MCP server or the broken hook.
+    pub fix: bool,
 }
 
 impl Issue {
@@ -80,6 +82,7 @@ impl Issue {
             nodes,
             args,
             message,
+            fix: false,
         }
     }
 }

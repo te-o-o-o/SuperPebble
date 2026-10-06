@@ -3,6 +3,10 @@
 ## 0.2.0 (2026-10-06)
 
 ### Added
+- **Clean up**: removes the orphan MCP servers and broken hooks you keep checked.
+- **Snapshot**: take a snapshot of the config files, or restore an earlier one;
+  every change SuperPebble makes can be undone this way.
+- The **Enabled** switch turns plugins on or off, and MCP servers per project.
 - Context budget: click the Claude Code pebble for the estimated startup context,
   by category, with the 10 heaviest files; `superpebble weight` prints the same.
 - `superpebble doctor --json`, `--severity warn|error` and `--quiet`.

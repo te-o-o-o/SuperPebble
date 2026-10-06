@@ -45,6 +45,10 @@ vraiment : un galet par élément, une branche par type, un badge par scope.
 - **Plusieurs comptes Claude Code** : créez des comptes `~/.claude-<nom>`,
   partagez skills, agents, commandes ou `CLAUDE.md` avec le compte par défaut
   par des liens symboliques, et obtenez un alias `claude-<nom>` dans `~/.zshrc`.
+- **Ménage et annulation** : **Faire le ménage** retire les MCP orphelins et
+  les hooks cassés ; chaque modification est d'abord copiée, et **Snapshot**
+  remet n'importe quel état précédent. Plugins et serveurs MCP se désactivent
+  aussi.
 - **Lecture seule par défaut** : le scan n'exécute jamais un serveur MCP ni un
   hook, et la valeur des secrets ne sort jamais du scanner. La gestion des
   comptes ne touche qu'à `~/.claude-<nom>`, et `~/.zshrc` est sauvegardé avant
