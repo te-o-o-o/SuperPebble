@@ -1,9 +1,13 @@
 [package]
 name = "superpebble"
-version = "0.1.0"
-edition = "2021"
-description = "Scan the effective Claude Code config: plugins, skills, MCP, hooks, agents"
-license = "MIT"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Scan the effective Claude Code config (plugins, skills, MCP, hooks, agents) and lint it"
+readme = "README.md"
+keywords = ["claude", "claude-code", "mcp", "lint", "config"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

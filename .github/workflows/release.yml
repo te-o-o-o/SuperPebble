@@ -1,8 +1,8 @@
 # Builds the installers on the three systems and publishes them on a GitHub Release.
 #
-# Triggered by a tag: `git tag v0.1.0 && git push --tags`. The tag must match the version
-# in package.json, tauri.conf.json and both Cargo.toml files: the installers are named
-# after tauri.conf.json, and a mismatch would ship two version numbers.
+# Triggered by a tag: `git tag v0.1.0 && git push --tags`. The tag must match
+# `[workspace.package] version` in the root Cargo.toml, the one version number the app
+# and the crate inherit.
 #
 # Nothing is signed. Windows shows a SmartScreen warning and macOS refuses to open the
 # app until the user clears it by hand; the release notes say how.
@@ -29,14 +29,8 @@ jobs:
       - id: check
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          for f in package.json src-tauri/tauri.conf.json; do
-            v=$(jq -r .version "$f")
-            [ "$v" = "$tag" ] || { echo "tag $GITHUB_REF_NAME does not match $f version $v" >&2; exit 1; }
-          done
-          for f in src-tauri/Cargo.toml crates/superpebble/Cargo.toml; do
-            v=$(grep -m1 '^version' "$f" | cut -d'"' -f2)
-            [ "$v" = "$tag" ] || { echo "tag $GITHUB_REF_NAME does not match $f version $v" >&2; exit 1; }
-          done
+          v=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          [ "$v" = "$tag" ] || { echo "tag $GITHUB_REF_NAME does not match Cargo.toml version $v" >&2; exit 1; }
           echo "version=$tag" >> "$GITHUB_OUTPUT"
 
   build:
