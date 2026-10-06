@@ -1,4 +1,4 @@
-use super::{file_name, Scan};
+use super::{file_name, secrets, Scan};
 use crate::model::{Kind, Scope};
 use crate::wsl;
 use serde_json::{json, Value};
@@ -59,13 +59,19 @@ pub fn hooks(s: &mut Scan, hooks: Option<&Value>, scope: Scope, source: &Path, p
     for (event, groups) in events {
         for (i, group) in groups.as_array().into_iter().flatten().enumerate() {
             for (j, h) in group["hooks"].as_array().into_iter().flatten().enumerate() {
+                let mut found = vec![];
+                let command = h
+                    .get("command")
+                    .and_then(Value::as_str)
+                    .map(|c| secrets::mask_command(c, &mut found));
                 let n = s.push(Kind::Hook, scope, source, event);
                 n.id = format!("{}/{i}/{j}", n.id);
                 n.meta = json!({
                     "event": event,
                     "matcher": group.get("matcher"),
                     "type": h.get("type"),
-                    "command": h.get("command"),
+                    "command": command,
+                    "plaintext_secrets": found,
                     // Position in the file, to find it again when moving it.
                     "index": [i, j],
                 });

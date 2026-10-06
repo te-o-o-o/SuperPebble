@@ -24,6 +24,7 @@ fn fixture_graph_and_issues() {
 
     let mut rules: Vec<_> = g.issues.iter().map(|i| i.rule).collect();
     rules.sort();
+    rules.dedup();
     assert_eq!(
         rules,
         ["broken-hook", "duplicate", "invalid-skill", "orphan-mcp", "plaintext-secret"]
@@ -31,6 +32,10 @@ fn fixture_graph_and_issues() {
 
     // Secret values never reach the graph.
     let json = serde_json::to_string(&g).unwrap();
-    assert!(!json.contains("ghp_fake_for_tests"));
+    for value in ["ghp_fake_for_tests", "fake_arg_secret", "fake_url_secret"] {
+        assert!(!json.contains(value), "{value} leaked");
+    }
+    let secrets = g.issues.iter().filter(|i| i.rule == "plaintext-secret").count();
+    assert_eq!(secrets, 3);
     assert!(json.contains("GITHUB_TOKEN"));
 }

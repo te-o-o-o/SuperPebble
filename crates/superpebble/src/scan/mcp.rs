@@ -1,3 +1,4 @@
+use super::secrets;
 use super::settings::Settings;
 use super::Scan;
 use crate::model::{Kind, Scope};
@@ -44,27 +45,37 @@ pub fn scan(s: &mut Scan, st: &Settings) {
     }
 }
 
-/// One node per server. Only env/header *keys* are kept; values are inspected here and dropped.
+/// One node per server. Only env/header *keys* are kept; values are inspected here and dropped,
+/// and secrets in args, command or url are masked.
 pub fn servers(s: &mut Scan, map: Option<&Value>, scope: Scope, source: &Path, parent: Option<(&str, &Path)>) {
     let Some(map) = map.and_then(Value::as_object) else { return };
     for (name, cfg) in map {
         let env = cfg.get("env").and_then(Value::as_object);
         let headers = cfg.get("headers").and_then(Value::as_object);
         let keys = |m: Option<&serde_json::Map<String, Value>>| m.map(|m| m.keys().cloned().collect::<Vec<_>>()).unwrap_or_default();
-        let secrets: Vec<&String> = env
+        let mut secrets: Vec<String> = env
             .into_iter()
             .chain(headers)
             .flatten()
-            .filter(|(k, v)| is_plaintext_secret(k, v))
-            .map(|(k, _)| k)
+            .filter(|(k, v)| secrets::plaintext(k, v))
+            .map(|(k, _)| k.clone())
             .collect();
+        let mut args = cfg.get("args").cloned();
+        if let Some(Value::Array(a)) = &mut args {
+            secrets::mask_args(a, &mut secrets);
+        }
+        let command = cfg
+            .get("command")
+            .and_then(Value::as_str)
+            .map(|c| secrets::mask_command(c, &mut secrets));
+        let url = cfg.get("url").and_then(Value::as_str).map(|u| secrets::mask_url(u, &mut secrets));
 
         let n = s.push(Kind::Mcp, scope, source, name);
         n.meta = json!({
             "type": cfg.get("type").and_then(Value::as_str).unwrap_or(if cfg.get("command").is_some() { "stdio" } else { "http" }),
-            "command": cfg.get("command"),
-            "args": cfg.get("args"),
-            "url": cfg.get("url"),
+            "command": command,
+            "args": args,
+            "url": url,
             "env_keys": keys(env),
             "header_keys": keys(headers),
             "plaintext_secrets": secrets,
@@ -73,30 +84,5 @@ pub fn servers(s: &mut Scan, map: Option<&Value>, scope: Scope, source: &Path, p
             n.parent = Some(id.to_string());
             n.meta["plugin_root"] = json!(root);
         }
-    }
-}
-
-fn is_plaintext_secret(key: &str, value: &Value) -> bool {
-    let k = key.to_ascii_uppercase();
-    let looks_secret = ["_TOKEN", "_KEY", "_SECRET", "PASSWORD"]
-        .iter()
-        .any(|s| k.ends_with(s) || k.contains(s))
-        || k == "AUTHORIZATION"
-        || k == "X-API-KEY";
-    // `${VAR}` is a reference resolved at launch, not a secret on disk.
-    looks_secret && value.as_str().is_some_and(|v| !v.is_empty() && !v.contains("${"))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::is_plaintext_secret;
-    use serde_json::json;
-
-    #[test]
-    fn secret_detection() {
-        assert!(is_plaintext_secret("GITHUB_TOKEN", &json!("ghp_x")));
-        assert!(is_plaintext_secret("Authorization", &json!("Bearer x")));
-        assert!(!is_plaintext_secret("GITHUB_TOKEN", &json!("${GITHUB_TOKEN}")));
-        assert!(!is_plaintext_secret("LOG_LEVEL", &json!("debug")));
     }
 }

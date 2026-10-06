@@ -11,15 +11,15 @@ pub fn check(nodes: &[Node], ctx: &ScanContext) -> Vec<Issue> {
     for n in nodes.iter().filter(|n| n.enabled) {
         let issue =
             |rule, severity, args: &[&str]| Issue::new(rule, severity, vec![n.id.clone()], args.iter().map(|s| s.to_string()).collect());
+        for key in n.meta["plaintext_secrets"].as_array().into_iter().flatten() {
+            out.push(issue("plaintext-secret", Severity::Warning, &[key.as_str().unwrap_or(""), &n.name]));
+        }
         match n.kind {
             Kind::Mcp => {
                 if let Some(cmd) = n.meta["command"].as_str() {
                     if !found(&expand(cmd, n, ctx), ctx) {
                         out.push(issue("orphan-mcp", Severity::Error, &[&n.name]));
                     }
-                }
-                for key in n.meta["plaintext_secrets"].as_array().into_iter().flatten() {
-                    out.push(issue("plaintext-secret", Severity::Warning, &[key.as_str().unwrap_or(""), &n.name]));
                 }
             }
             Kind::Hook => {

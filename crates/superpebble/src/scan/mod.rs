@@ -4,6 +4,7 @@
 mod files;
 mod mcp;
 mod plugins;
+mod secrets;
 mod settings;
 
 use crate::model::*;

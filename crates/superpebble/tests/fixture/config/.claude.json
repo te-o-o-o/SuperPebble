@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "github": { "command": "cargo", "env": { "GITHUB_TOKEN": "ghp_fake_for_tests", "OTHER": "${FROM_ENV}" } },
-    "notion": { "type": "http", "url": "https://mcp.notion.com/mcp" }
+    "github": { "command": "cargo", "args": ["--api-key", "fake_arg_secret"], "env": { "GITHUB_TOKEN": "ghp_fake_for_tests", "OTHER": "${FROM_ENV}" } },
+    "notion": { "type": "http", "url": "https://mcp.notion.com/mcp?token=fake_url_secret" }
   }
 }
