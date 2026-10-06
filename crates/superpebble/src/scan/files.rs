@@ -94,7 +94,9 @@ pub fn memory(s: &mut Scan) {
     let mut files = vec![(Scope::User, s.ctx.config_dir.join("CLAUDE.md"))];
     if let Some(p) = &s.ctx.project {
         files.push((Scope::Project, p.join("CLAUDE.md")));
-        files.push((Scope::Project, p.join(".claude/CLAUDE.md")));
+        if let Some(d) = s.ctx.project_claude() {
+            files.push((Scope::Project, d.join("CLAUDE.md")));
+        }
         files.push((Scope::Local, p.join("CLAUDE.local.md")));
     }
     for (scope, path) in files {

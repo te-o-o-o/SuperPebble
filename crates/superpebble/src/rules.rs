@@ -54,17 +54,29 @@ fn duplicates(nodes: &[Node]) -> Vec<Issue> {
         .collect()
 }
 
-/// First word must be a known binary; any absolute path argument must exist.
+/// Shell words that are not files on disk.
+const BUILTINS: [&str; 16] = [
+    "cd", "source", ".", "export", "exec", "eval", "set", "unset", "if", "[", "[[", "test", "true", "false", "command", "type",
+];
+
+/// First word (after `VAR=value` prefixes) must be a known binary or builtin; any absolute path
+/// argument must exist, unless it is a redirection target the command creates.
 fn missing_in_command(cmd: &str, n: &Node, ctx: &ScanContext) -> Option<String> {
     let words = split(&expand(cmd, n, ctx));
-    let first = words.first()?;
-    if !found(first, ctx) {
+    let start = words.iter().position(|w| !is_assignment(w))?;
+    let first = &words[start];
+    if !BUILTINS.contains(&first.as_str()) && !found(first, ctx) {
         return Some(first.clone());
     }
-    words[1..]
-        .iter()
-        .find(|w| w.starts_with('/') && !w.contains('$') && !ctx.path(w).exists())
-        .cloned()
+    (start + 1..words.len())
+        .map(|i| (&words[i - 1], &words[i]))
+        .find(|(prev, w)| !prev.ends_with('>') && w.starts_with('/') && !w.contains('$') && !ctx.path(w).exists())
+        .map(|(_, w)| w.clone())
+}
+
+fn is_assignment(w: &str) -> bool {
+    w.split_once('=')
+        .is_some_and(|(k, _)| !k.is_empty() && k.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
 }
 
 fn expand(s: &str, n: &Node, ctx: &ScanContext) -> String {
@@ -167,6 +179,13 @@ mod tests {
             // The test binary itself: a command that exists on every OS.
             node(Kind::Mcp, "ok", Scope::User, json!({"command": std::env::current_exe().unwrap()})),
             node(Kind::Hook, "Stop", Scope::User, json!({"command": "sh /nope/notify.sh"})),
+            // Not broken: env prefix, builtin, and a log file the command creates.
+            node(
+                Kind::Hook,
+                "Pre",
+                Scope::User,
+                json!({"command": "FOO=1 source x.sh > /nope/new.log"}),
+            ),
             node(Kind::Skill, "dup", Scope::User, json!({})),
             node(Kind::Skill, "dup", Scope::Project, json!({})),
             node(Kind::Command, "deploy", Scope::User, json!({})),

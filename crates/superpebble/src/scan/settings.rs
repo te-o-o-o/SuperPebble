@@ -26,7 +26,9 @@ fn managed_path() -> PathBuf {
 pub fn scan(s: &mut Scan) -> Settings {
     let mut files = vec![(Scope::User, s.ctx.config_dir.join("settings.json"))];
     if let Some(p) = &s.ctx.project {
-        files.push((Scope::Project, p.join(".claude/settings.json")));
+        if let Some(d) = s.ctx.project_claude() {
+            files.push((Scope::Project, d.join("settings.json")));
+        }
         files.push((Scope::Local, p.join(".claude/settings.local.json")));
     }
     let managed = match wsl::root(&s.ctx.config_dir) {
