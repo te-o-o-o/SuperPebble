@@ -14,6 +14,7 @@
 - `doctor` exit codes: 0 no problem, 1 warnings only, 2 errors, 64 bad usage
   (was 1 on errors, 2 on bad usage).
 - One version number, `[workspace.package]` in the root `Cargo.toml`.
+- The Claude Code pebble shows a pointer: it opens the context budget.
 
 ### Fixed
 - Secret values in MCP args or urls were shown as is in the graph and the UI.

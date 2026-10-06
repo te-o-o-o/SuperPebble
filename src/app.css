@@ -108,7 +108,6 @@ button.ghost svg { width: 15px; height: 15px; fill: none; stroke: currentColor; 
   animation: pebble-in 0.35s cubic-bezier(0.3, 0.7, 0.4, 1.3) backwards;
 }
 .pebble:hover { transform: scale(1.05); filter: brightness(1.2); }
-.pebble.center { cursor: default; }
 .pebble.center:hover { transform: none; filter: none; }
 .pebble:active { transform: scale(0.96); transition-duration: 0.08s; }
 .pebble.disabled { opacity: 0.45; }
