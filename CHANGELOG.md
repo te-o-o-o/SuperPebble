@@ -3,7 +3,8 @@
 ## 0.2.0 (2026-10-06)
 
 ### Added
-- `superpebble weight`: estimated startup context, by category, with the 10 heaviest files.
+- Context budget: click the Claude Code pebble for the estimated startup context,
+  by category, with the 10 heaviest files; `superpebble weight` prints the same.
 - `superpebble doctor --json`, `--severity warn|error` and `--quiet`.
 - Secrets are detected in MCP args, command and url, and in hook commands, plus
   well-known token formats (`sk-…`, `ghp_…`, `AKIA…`) whatever their key.

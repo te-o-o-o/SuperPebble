@@ -36,9 +36,10 @@ vraiment : un galet par élément, une branche par type, un badge par scope.
 - **Diagnostic** : signale les serveurs MCP orphelins (commande introuvable),
   les hooks cassés (script manquant), les secrets en clair, les doublons entre
   scopes, les skills invalides et le JSON illisible.
-- **Poids en tokens** : une estimation (caractères/4) de ce que coûte chaque
-  fichier au démarrage, et `superpebble weight` pour le total par catégorie,
-  avec les fichiers les plus lourds.
+- **Budget de contexte** : une estimation (caractères/4) de ce que Claude Code
+  charge au démarrage. Cliquez sur le galet Claude Code, ou lancez
+  `superpebble weight`, pour le total par catégorie et les fichiers les plus
+  lourds.
 - **En direct** : un file watcher relance le scan dès qu'un fichier de config
   change.
 - **Plusieurs comptes Claude Code** : créez des comptes `~/.claude-<nom>`,

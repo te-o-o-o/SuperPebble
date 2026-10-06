@@ -4,6 +4,7 @@ import { api } from "./api";
 import { t } from "./i18n";
 import { AccountsDialog } from "./components/AccountsDialog";
 import { BranchPanel } from "./components/BranchPanel";
+import { BudgetPanel } from "./components/BudgetPanel";
 import { DetailPanel } from "./components/DetailPanel";
 import { GraphView } from "./components/GraphView";
 import { IssueBar } from "./components/IssueBar";
@@ -112,7 +113,9 @@ export default function App() {
         )}
       </ReactFlowProvider>
       {graph &&
-        (selected?.startsWith("group:") ? (
+        (selected === "center" ? (
+          <BudgetPanel graph={graph} onSelect={setSelected} />
+        ) : selected?.startsWith("group:") ? (
           <BranchPanel graph={graph} group={selected.slice(6) as GroupKey} onSelect={setSelected} />
         ) : (
           <DetailPanel graph={graph} node={node} onOpen={api.openPath} onSelect={setSelected} onMove={readOnly ? undefined : setMoving} />

@@ -38,4 +38,10 @@ fn fixture_graph_and_issues() {
     let secrets = g.issues.iter().filter(|i| i.rule == "plaintext-secret").count();
     assert_eq!(secrets, 3);
     assert!(json.contains("GITHUB_TOKEN"));
+
+    let b = &g.budget;
+    assert_eq!(b.total, b.claude_md + b.skills + b.agents);
+    assert!(b.claude_md > 0 && b.skills > 0 && b.agents > 0);
+    assert_eq!(b.mcp_servers, 3);
+    assert!(b.top.len() <= 10);
 }

@@ -1,6 +1,6 @@
 use serde_json::json;
 use std::path::PathBuf;
-use superpebble::model::{Graph, Kind, Severity};
+use superpebble::model::{Graph, Severity};
 use superpebble::{scan, ScanContext};
 
 const USAGE: &str = "usage: superpebble <scan|doctor|weight|accounts> [options]
@@ -84,45 +84,24 @@ fn doctor(g: &Graph, min: Severity, as_json: bool, quiet: bool) -> i32 {
 }
 
 fn weight(g: &Graph, as_json: bool) {
-    // Plugin nodes carry the sum of their children: counting both would count twice.
-    let mut loaded: Vec<_> = g
-        .nodes
-        .iter()
-        .filter(|n| n.enabled && n.kind != Kind::Plugin && n.tokens.is_some())
-        .collect();
-    loaded.sort_by_key(|n| std::cmp::Reverse(n.tokens));
-    let sum = |kinds: &[Kind]| {
-        loaded
-            .iter()
-            .filter(|n| kinds.contains(&n.kind))
-            .map(|n| n.tokens.unwrap_or(0))
-            .sum::<u32>()
-    };
-    let categories = [
-        ("CLAUDE.md", sum(&[Kind::Config])),
-        ("skills & commands", sum(&[Kind::Skill, Kind::Command])),
-        ("agents", sum(&[Kind::Agent])),
-    ];
-    let total: u32 = categories.iter().map(|c| c.1).sum();
-    let mcp = g.nodes.iter().filter(|n| n.enabled && n.kind == Kind::Mcp).count();
-    let top = &loaded[..loaded.len().min(10)];
-
+    let b = &g.budget;
+    let top: Vec<_> = b.top.iter().filter_map(|id| g.nodes.iter().find(|n| &n.id == id)).collect();
     if as_json {
         print(json!({
             "estimate": true,
             "method": METHOD,
-            "total": total,
-            "categories": categories.iter().map(|(k, v)| (k.to_string(), json!(v))).collect::<serde_json::Map<_, _>>(),
-            "mcp_servers_not_counted": mcp,
+            "total": b.total,
+            "categories": { "claude_md": b.claude_md, "skills": b.skills, "agents": b.agents },
+            "mcp_servers_not_counted": b.mcp_servers,
             "top": top.iter().map(|n| json!({ "name": n.name, "kind": n.kind, "scope": n.scope, "source": n.source, "tokens": n.tokens })).collect::<Vec<_>>(),
         }));
         return;
     }
-    println!("~{total} tokens loaded at startup (estimate)\n");
-    for (name, t) in categories {
+    println!("~{} tokens loaded at startup (estimate)\n", b.total);
+    for (name, t) in [("CLAUDE.md", b.claude_md), ("skills & commands", b.skills), ("agents", b.agents)] {
         println!("  {name:<18} ~{t}");
     }
-    println!("  {:<18} {mcp} servers, not counted\n\nHeaviest:", "MCP");
+    println!("  {:<18} {} servers, not counted\n\nHeaviest:", "MCP", b.mcp_servers);
     for n in top {
         println!(
             "  ~{:<7} {:<8} {}",
