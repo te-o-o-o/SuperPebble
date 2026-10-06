@@ -84,6 +84,20 @@ impl Issue {
     }
 }
 
+/// Estimated context Claude Code loads at startup: the sum of `Node::tokens`.
+#[derive(Serialize, Debug)]
+pub struct Budget {
+    pub total: u32,
+    pub claude_md: u32,
+    /// Skills and commands: both are listed by name + description.
+    pub skills: u32,
+    pub agents: u32,
+    /// Enabled MCP servers, whose tool definitions are not estimated.
+    pub mcp_servers: usize,
+    /// Ids of the 10 heaviest nodes, heaviest first.
+    pub top: Vec<String>,
+}
+
 #[derive(Serialize, Debug)]
 pub struct Graph {
     pub config_dir: PathBuf,
@@ -91,4 +105,5 @@ pub struct Graph {
     pub scanned_at: u64,
     pub nodes: Vec<Node>,
     pub issues: Vec<Issue>,
+    pub budget: Budget,
 }

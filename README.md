@@ -35,8 +35,9 @@ pebble per item, one branch per kind, one badge per scope.
 - **Doctor**: flags orphan MCP servers (command not found), broken hooks
   (missing script), secrets in plain text, duplicates across scopes, invalid
   skills and unreadable JSON.
-- **Token weight**: a rough estimate (chars/4) of what each file costs at startup,
-  and `superpebble weight` for the total, by category, with the heaviest files.
+- **Context budget**: a rough estimate (chars/4) of what Claude Code loads at
+  startup. Click the Claude Code pebble, or run `superpebble weight`, for the
+  total by category and the heaviest files.
 - **Live**: a file watcher rescans as soon as a config file changes.
 - **Several Claude Code accounts**: create `~/.claude-<name>` accounts, share
   skills, agents, commands or `CLAUDE.md` with the default one through symlinks,

@@ -30,6 +30,16 @@ export interface Graph {
   scanned_at: number;
   nodes: PNode[];
   issues: Issue[];
+  budget: Budget;
+}
+
+export interface Budget {
+  total: number;
+  claude_md: number;
+  skills: number;
+  agents: number;
+  mcp_servers: number;
+  top: string[];
 }
 
 export interface Account {

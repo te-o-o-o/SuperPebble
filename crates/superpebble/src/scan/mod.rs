@@ -173,11 +173,31 @@ pub fn scan(ctx: &ScanContext) -> Graph {
     let mut issues = s.issues;
     issues.extend(crate::rules::check(&s.nodes, ctx));
     Graph {
+        budget: budget(&s.nodes),
         config_dir: ctx.config_dir.clone(),
         project: ctx.project.clone(),
         scanned_at: SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs()),
         nodes: s.nodes,
         issues,
+    }
+}
+
+fn budget(nodes: &[Node]) -> Budget {
+    // Plugin nodes carry the sum of their children: counting both would count twice.
+    let mut loaded: Vec<_> = nodes
+        .iter()
+        .filter(|n| n.enabled && n.kind != Kind::Plugin && n.tokens.is_some())
+        .collect();
+    loaded.sort_by_key(|n| std::cmp::Reverse(n.tokens));
+    let sum = |kinds: &[Kind]| loaded.iter().filter(|n| kinds.contains(&n.kind)).filter_map(|n| n.tokens).sum();
+    let (claude_md, skills, agents) = (sum(&[Kind::Config]), sum(&[Kind::Skill, Kind::Command]), sum(&[Kind::Agent]));
+    Budget {
+        total: claude_md + skills + agents,
+        claude_md,
+        skills,
+        agents,
+        mcp_servers: nodes.iter().filter(|n| n.enabled && n.kind == Kind::Mcp).count(),
+        top: loaded.iter().take(10).map(|n| n.id.clone()).collect(),
     }
 }
 

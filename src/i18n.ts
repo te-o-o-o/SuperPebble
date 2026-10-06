@@ -87,6 +87,12 @@ const FR: Record<string, string> = {
   "Items": "Éléments",
   "At startup": "Au démarrage",
   "Content": "Contenu",
+  "Context budget": "Budget de contexte",
+  "loaded at startup, estimated": "chargés au démarrage, estimation",
+  "{0} servers, not counted": "{0} serveurs, non comptés",
+  "Heaviest": "Les plus lourds",
+  "Estimate: characters ÷ 4 of CLAUDE.md files with their @imports, and of the name and description of each skill, command and agent. MCP tool definitions are not counted: reading them would mean starting the servers.":
+    "Estimation : caractères ÷ 4 des fichiers CLAUDE.md avec leurs @imports, et du nom et de la description de chaque skill, commande et agent. Les définitions d'outils MCP ne sont pas comptées : il faudrait démarrer les serveurs.",
   "Select a pebble to see its details.": "Sélectionne un galet pour voir son détail.",
   "{0} · scope {1}": "{0} · scope {1}",
   "unknown": "inconnu",

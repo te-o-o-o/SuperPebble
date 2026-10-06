@@ -69,7 +69,7 @@ export function layout(graph: Graph, hidden: Set<GroupKey>, expanded: Set<string
   for (const n of graph.nodes) if (n.parent) children.set(n.parent, [...(children.get(n.parent) ?? []), n]);
 
   const total = graph.nodes.filter((n) => n.enabled && n.kind !== "plugin" && inScope(n)).reduce((s, n) => s + (n.tokens ?? 0), 0);
-  nodes.push(pebble("center", { x: 0, y: 0 }, { variant: "center", label: "Claude Code", sub: `~${fmtTokens(total)} tok`, color: COLORS.center, target: "center", w: 124, h: 124 }));
+  nodes.push(pebble("center", { x: 0, y: 0 }, { variant: "center", label: "Claude Code", sub: `~${fmtTokens(total)} tok`, color: COLORS.center, target: "center", selected: selected === "center", w: 124, h: 124 }));
 
   const itemData = (n: PNode): PebbleData => {
     const worst = [...(issues.get(n.id) ?? [])].sort((a, b) => Number(b.severity === "error") - Number(a.severity === "error"))[0];
