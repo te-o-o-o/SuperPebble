@@ -10,7 +10,8 @@ const stored = (() => {
     return null;
   }
 })();
-export const lang: Lang = stored === "fr" ? "fr" : "en";
+/** A choice made with the switch wins; otherwise the system language. */
+export const lang: Lang = (stored ?? navigator.language).startsWith("fr") ? "fr" : "en";
 document.documentElement.lang = lang;
 
 /** Labels are read once at module load, so switching reloads the page. */
