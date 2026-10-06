@@ -35,8 +35,9 @@ vraiment : un galet par élément, une branche par type, un badge par scope.
 - **Diagnostic** : signale les serveurs MCP orphelins (commande introuvable),
   les hooks cassés (script manquant), les secrets en clair, les doublons entre
   scopes, les skills invalides et le JSON illisible.
-- **Poids en tokens** : une estimation de ce que coûte chaque fichier au
-  démarrage.
+- **Poids en tokens** : une estimation (caractères/4) de ce que coûte chaque
+  fichier au démarrage, et `superpebble weight` pour le total par catégorie,
+  avec les fichiers les plus lourds.
 - **En direct** : un file watcher relance le scan dès qu'un fichier de config
   change.
 - **Plusieurs comptes Claude Code** : créez des comptes `~/.claude-<nom>`,
@@ -73,13 +74,16 @@ Le scanner est aussi un CLI autonome, sans fenêtre :
 
 ```sh
 cargo run -p superpebble -- doctor      # les problèmes du projet courant
+cargo run -p superpebble -- weight      # contexte estimé au démarrage, par catégorie
 cargo run -p superpebble -- scan        # le graphe en JSON
 cargo run -p superpebble -- accounts    # comptes, partages et alias shell
 ```
 
 `--config DIR` choisit le compte (par défaut `$CLAUDE_CONFIG_DIR` ou
 `~/.claude`), `--project DIR` ou `--no-project` le projet (par défaut : le
-dossier courant).
+dossier courant). `doctor` sort avec 0 (rien), 1 (avertissements) ou 2
+(erreurs) et accepte `--json`, `--severity warn|error` et `--quiet`, pour la CI.
+Toutes les options et règles : [crates/superpebble/README.md](crates/superpebble/README.md).
 
 ## Plusieurs comptes
 

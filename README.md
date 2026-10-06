@@ -34,7 +34,8 @@ pebble per item, one branch per kind, one badge per scope.
 - **Doctor**: flags orphan MCP servers (command not found), broken hooks
   (missing script), secrets in plain text, duplicates across scopes, invalid
   skills and unreadable JSON.
-- **Token weight**: a rough estimate of what each file costs at startup.
+- **Token weight**: a rough estimate (chars/4) of what each file costs at startup,
+  and `superpebble weight` for the total, by category, with the heaviest files.
 - **Live**: a file watcher rescans as soon as a config file changes.
 - **Several Claude Code accounts**: create `~/.claude-<name>` accounts, share
   skills, agents, commands or `CLAUDE.md` with the default one through symlinks,
@@ -71,12 +72,16 @@ The scanner is also a standalone CLI, no window needed:
 
 ```sh
 cargo run -p superpebble -- doctor      # problems for the current project
+cargo run -p superpebble -- weight      # estimated startup context, by category
 cargo run -p superpebble -- scan        # the graph as JSON
 cargo run -p superpebble -- accounts    # accounts, sharing and shell aliases
 ```
 
 `--config DIR` picks an account (default `$CLAUDE_CONFIG_DIR` or `~/.claude`),
 `--project DIR` or `--no-project` the project (default: the current directory).
+`doctor` exits 0 (clean), 1 (warnings) or 2 (errors) and takes `--json`,
+`--severity warn|error` and `--quiet`, for CI. Every option and rule:
+[crates/superpebble/README.md](crates/superpebble/README.md).
 
 ## Several accounts
 
