@@ -3,11 +3,11 @@
 
 use serde_json::Value;
 
-pub const MASK: &str = "***";
+const MASK: &str = "***";
 
 /// `GITHUB_TOKEN`, `--api-key`, `X-API-Key`, `Authorization`: the last word names a secret.
 /// Last word only, so `TOKEN_LIMIT`, `API_KEY_FILE` or `AWS_ACCESS_KEY_ID` don't count.
-pub fn secret_name(name: &str) -> bool {
+fn secret_name(name: &str) -> bool {
     let n = name.trim_start_matches('-').to_ascii_uppercase().replace('-', "_");
     let words: Vec<&str> = n.split('_').filter(|w| !w.is_empty()).collect();
     !words.contains(&"PUBLIC")
@@ -23,7 +23,7 @@ fn literal(v: &str) -> bool {
 }
 
 /// Well-known token formats, flagged whatever their key: `sk-ant-…`, `ghp_…`, `AKIA…`.
-pub fn token_like(v: &str) -> bool {
+fn token_like(v: &str) -> bool {
     const PREFIXES: [&str; 20] = [
         "sk-",
         "ghp_",

@@ -35,7 +35,6 @@ fn main() {
             flag("--project").map(PathBuf::from).or_else(|| std::env::current_dir().ok())
         },
     };
-    let print = |v: serde_json::Value| println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
 
     match args.first().map(String::as_str) {
         Some("accounts") => print(json!(superpebble::accounts::list())),
@@ -54,6 +53,10 @@ fn main() {
     }
 }
 
+fn print(v: serde_json::Value) {
+    println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+}
+
 fn usage() -> ! {
     eprintln!("{USAGE}");
     std::process::exit(64);
@@ -64,8 +67,7 @@ fn doctor(g: &Graph, min: Severity, as_json: bool, quiet: bool) -> i32 {
     let count = |s| issues.iter().filter(|i| i.severity == s).count();
     let (errors, warnings) = (count(Severity::Error), count(Severity::Warning));
     if as_json {
-        let v = json!({ "errors": errors, "warnings": warnings, "issues": issues });
-        println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+        print(json!({ "errors": errors, "warnings": warnings, "issues": issues }));
     } else {
         for i in &issues {
             println!("{:<8} {}", format!("{:?}", i.severity).to_lowercase(), i.message);
@@ -106,15 +108,14 @@ fn weight(g: &Graph, as_json: bool) {
     let top = &loaded[..loaded.len().min(10)];
 
     if as_json {
-        let v = json!({
+        print(json!({
             "estimate": true,
             "method": METHOD,
             "total": total,
             "categories": categories.iter().map(|(k, v)| (k.to_string(), json!(v))).collect::<serde_json::Map<_, _>>(),
             "mcp_servers_not_counted": mcp,
             "top": top.iter().map(|n| json!({ "name": n.name, "kind": n.kind, "scope": n.scope, "source": n.source, "tokens": n.tokens })).collect::<Vec<_>>(),
-        });
-        println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+        }));
         return;
     }
     println!("~{total} tokens loaded at startup (estimate)\n");
