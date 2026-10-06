@@ -3,9 +3,10 @@
 
 use crate::model::{Kind, Node, Scope};
 use crate::scan::{scan, ScanContext};
-use crate::transfer::{obj, settings_file, take_hook, take_mcp, Files, GONE};
+use crate::transfer::{obj, settings_file, take_hook, take_mcp, Files, GONE, SHAPE};
 use crate::{snapshot, wsl};
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 fn writable(ctx: &ScanContext) -> Result<(), String> {
@@ -43,7 +44,7 @@ pub fn set_enabled(ctx: &ScanContext, id: &str, on: bool) -> Result<(), String> 
                 .entry(list)
                 .or_insert_with(|| json!([]))
                 .as_array_mut()
-                .ok_or(crate::transfer::SHAPE)?;
+                .ok_or(SHAPE)?;
             names.retain(|v| v.as_str() != Some(&n.name));
             if !on {
                 names.push(json!(n.name));
@@ -91,15 +92,13 @@ pub fn clean_up(ctx: &ScanContext, ids: &[String]) -> Result<(), String> {
 /// Copies every config file of the account and project, plugin files aside.
 pub fn snapshot_now(ctx: &ScanContext) -> Result<(), String> {
     let graph = scan(ctx);
-    let mut files: Vec<PathBuf> = graph
+    let files: BTreeSet<PathBuf> = graph
         .nodes
         .iter()
         .filter(|n| matches!(n.kind, Kind::Config | Kind::Mcp | Kind::Hook) && n.parent.is_none() && n.scope != Scope::Managed)
         .map(|n| n.source.clone())
         .chain([ctx.claude_json(), ctx.config_dir.join("plugins/installed_plugins.json")])
         .collect();
-    files.sort();
-    files.dedup();
     let paths: Vec<&Path> = files.iter().map(PathBuf::as_path).collect();
     snapshot::save(&paths, "manual snapshot").map(drop).map_err(|e| e.to_string())
 }
