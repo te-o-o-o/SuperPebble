@@ -5,7 +5,7 @@
   plugins, skills, MCP servers, hooks, agents, CLAUDE.md — and what's broken.
 </p>
 
-<p align="center"><sub>v0.1.0 · Rust + Tauri · macOS, Linux, Windows · MIT</sub></p>
+<p align="center"><sub>Rust + Tauri · macOS, Linux, Windows · MIT</sub></p>
 
 <p align="center">
   <a href="#features">Features</a> ·
@@ -13,6 +13,7 @@
   <a href="#command-line">Command line</a> ·
   <a href="#several-accounts">Accounts</a> ·
   <a href="#development">Development</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="README.fr.md">Français</a>
 </p>
 
@@ -44,11 +45,16 @@ pebble per item, one branch per kind, one badge per scope.
   secret values never leave the scanner. Account changes only ever touch
   `~/.claude-<name>`, and `~/.zshrc` is snapshotted before any edit.
 
-The interface is in French for now.
+The interface is in English, or French when the system is; switch it from the top bar.
 
 ## Install
 
-Build from source. You need Rust and Node:
+Download the installer for your system from the [latest release](https://github.com/te-o-o-o/SuperPebble/releases/latest):
+`.exe` setup or portable `.zip` on Windows, universal `.dmg` on macOS,
+`.AppImage` or `.deb` on Linux. Nothing is signed: Windows shows a SmartScreen
+warning, and macOS needs `xattr -dr com.apple.quarantine SuperPebble.app` once.
+
+Or build from source. You need Rust and Node:
 
 ```sh
 npm install
@@ -63,12 +69,10 @@ open target/release/bundle/macos/SuperPebble.app
 ./target/release/bundle/macos/SuperPebble.app/Contents/MacOS/superpebble-app
 ```
 
-Nothing is signed: if you copy the app to another Mac, run
-`xattr -dr com.apple.quarantine SuperPebble.app` first.
-
 ## Command line
 
-The scanner is also a standalone CLI, no window needed:
+The scanner is also a standalone CLI, no window needed. Install it with
+`cargo install --path crates/superpebble`, or run it in place:
 
 ```sh
 cargo run -p superpebble -- doctor      # problems for the current project
@@ -125,11 +129,13 @@ Ship `superpebble-app.exe` together with `WebView2Loader.dll` from
 
 ## Release
 
-Bump the version in `package.json`, `src-tauri/tauri.conf.json`,
-`src-tauri/Cargo.toml` and `crates/superpebble/Cargo.toml`, then tag:
+The version lives in one place, `[workspace.package]` in the root `Cargo.toml`:
+the app and the crate inherit it. Bump it, date the `Unreleased` section of
+[CHANGELOG.md](CHANGELOG.md), commit, then tag:
 
 ```sh
-git tag v0.1.0 && git push --tags
+git tag v0.2.0 && git push --tags
+cargo publish -p superpebble        # the CLI on crates.io, by hand
 ```
 
 The `release` workflow builds the Windows installer and portable zip, the
