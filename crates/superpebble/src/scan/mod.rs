@@ -60,6 +60,18 @@ impl ScanContext {
         }
     }
 
+    /// `<project>/.claude`, unless it is the account dir itself (Claude Code run from `~`):
+    /// scanning it a second time as the project would flag every item as a duplicate.
+    pub(crate) fn project_claude(&self) -> Option<PathBuf> {
+        let d = self.project.as_ref()?.join(".claude");
+        let same = d
+            .canonicalize()
+            .ok()
+            .zip(self.config_dir.canonicalize().ok())
+            .is_some_and(|(a, b)| a == b);
+        (!same).then_some(d)
+    }
+
     /// Files and dirs whose change should trigger a rescan. Dirs are watched recursively.
     pub fn watched_paths(&self) -> Vec<PathBuf> {
         let c = &self.config_dir;
@@ -121,15 +133,19 @@ impl Scan<'_> {
         self.issues.push(Issue::new(rule, severity, vec![node.to_string()], args));
     }
 
-    /// `Ok(None)` when the file doesn't exist; a parse error becomes an issue on a config node.
+    /// `None` when the file doesn't exist; a read or parse error becomes an issue on a config node.
     pub fn read_json(&mut self, path: &Path, scope: Scope) -> Option<Value> {
-        let text = std::fs::read_to_string(path).ok()?;
-        match serde_json::from_str(&text) {
+        let parsed = match std::fs::read_to_string(path) {
+            Ok(text) => serde_json::from_str(&text).map_err(|e| e.to_string()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
+            Err(e) => Err(e.to_string()),
+        };
+        match parsed {
             Ok(v) => Some(v),
             Err(e) => {
                 let name = file_name(path);
                 let id = self.push(Kind::Config, scope, path, &name).id.clone();
-                self.issue("invalid-json", Severity::Error, &id, &[&name, &e.to_string()]);
+                self.issue("invalid-json", Severity::Error, &id, &[&name, &e]);
                 None
             }
         }
@@ -145,8 +161,8 @@ pub fn scan(ctx: &ScanContext) -> Graph {
     let st = settings::scan(&mut s);
     files::memory(&mut s);
     files::dir_items(&mut s, &ctx.config_dir, Scope::User, None);
-    if let Some(p) = &ctx.project {
-        files::dir_items(&mut s, &p.join(".claude"), Scope::Project, None);
+    if let Some(d) = ctx.project_claude() {
+        files::dir_items(&mut s, &d, Scope::Project, None);
     }
     mcp::scan(&mut s, &st);
     plugins::scan(&mut s, &st);
