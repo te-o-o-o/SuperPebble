@@ -5,7 +5,7 @@
   plugins, skills, serveurs MCP, hooks, agents, CLAUDE.md — et ce qui est cassé.
 </p>
 
-<p align="center"><sub>v0.1.0 · Rust + Tauri · macOS, Linux, Windows · MIT</sub></p>
+<p align="center"><sub>Rust + Tauri · macOS, Linux, Windows · MIT</sub></p>
 
 <p align="center">
   <a href="#fonctionnalités">Fonctionnalités</a> ·
@@ -13,6 +13,7 @@
   <a href="#en-ligne-de-commande">Ligne de commande</a> ·
   <a href="#plusieurs-comptes">Comptes</a> ·
   <a href="#développement">Développement</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="README.md">English</a>
 </p>
 
@@ -50,7 +51,13 @@ vraiment : un galet par élément, une branche par type, un badge par scope.
 
 ## Installer
 
-À compiler depuis les sources. Il faut Rust et Node :
+Téléchargez l'installeur de votre système dans la [dernière release](https://github.com/te-o-o-o/SuperPebble/releases/latest) :
+setup `.exe` ou `.zip` portable sous Windows, `.dmg` universel sous macOS,
+`.AppImage` ou `.deb` sous Linux. Rien n'est signé : Windows affiche un
+avertissement SmartScreen, et macOS demande une fois
+`xattr -dr com.apple.quarantine SuperPebble.app`.
+
+Ou compilez depuis les sources. Il faut Rust et Node :
 
 ```sh
 npm install
@@ -65,12 +72,10 @@ open target/release/bundle/macos/SuperPebble.app
 ./target/release/bundle/macos/SuperPebble.app/Contents/MacOS/superpebble-app
 ```
 
-Rien n'est signé : si vous copiez l'app sur un autre Mac, lancez d'abord
-`xattr -dr com.apple.quarantine SuperPebble.app`.
-
 ## En ligne de commande
 
-Le scanner est aussi un CLI autonome, sans fenêtre :
+Le scanner est aussi un CLI autonome, sans fenêtre. Installez-le avec
+`cargo install --path crates/superpebble`, ou lancez-le sur place :
 
 ```sh
 cargo run -p superpebble -- doctor      # les problèmes du projet courant
@@ -129,11 +134,13 @@ Livrez `superpebble-app.exe` avec `WebView2Loader.dll`, depuis
 
 ## Release
 
-Montez la version dans `package.json`, `src-tauri/tauri.conf.json`,
-`src-tauri/Cargo.toml` et `crates/superpebble/Cargo.toml`, puis taguez :
+La version est à un seul endroit, `[workspace.package]` dans le `Cargo.toml`
+racine : l'app et le crate en héritent. Montez-la, datez la section
+`Unreleased` du [CHANGELOG.md](CHANGELOG.md), commitez, puis taguez :
 
 ```sh
-git tag v0.1.0 && git push --tags
+git tag v0.2.0 && git push --tags
+cargo publish -p superpebble        # le CLI sur crates.io, à la main
 ```
 
 Le workflow `release` construit l'installeur Windows et le zip portable,
