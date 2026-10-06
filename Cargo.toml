@@ -5,7 +5,7 @@ resolver = "2"
 # The one version number: the app (tauri.conf.json has none, so Tauri reads it from
 # src-tauri/Cargo.toml) and the crate both inherit it.
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/te-o-o-o/SuperPebble"
