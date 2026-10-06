@@ -13,7 +13,7 @@ export function BudgetPanel({ graph, onSelect }: { graph: Graph; onSelect: (id: 
     [t("Skills & commands"), b.skills, color("skill")],
     ["Agents", b.agents, color("agent")],
   ];
-  const top = b.top.map((id) => graph.nodes.find((n) => n.id === id)!).filter(Boolean);
+  const top = b.top.flatMap((id) => graph.nodes.find((n) => n.id === id) ?? []);
 
   return (
     <aside className="detail">
