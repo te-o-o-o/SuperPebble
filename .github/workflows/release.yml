@@ -45,7 +45,7 @@ jobs:
             os: windows-latest
           # One app for both architectures: Apple Silicon and the Intel Macs still around.
           - name: macos
-            os: macos-14
+            os: macos-15
             args: --target universal-apple-darwin
           # Not `ubuntu-latest`: the AppImage links against the glibc that built it,
           # so the oldest runner buys the widest compatibility.
